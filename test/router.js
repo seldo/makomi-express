@@ -1,3 +1,7 @@
+/**
+ * Router generator tests
+ * @type {*}
+ */
 var test = require('tape');
 var generator = require('../generators/router.js');
 var fs = require('fs');

@@ -1,3 +1,7 @@
+/**
+ * Controller generator tests
+ * @type {*}
+ */
 var test = require('tape');
 var generator = require('../generators/controllers.js');
 var fs = require('fs');

@@ -1,4 +1,5 @@
 /**
+ * Full module tests
  * Putting it all together, test generation of an entire app from source.
  */
 var test = require('tape');
