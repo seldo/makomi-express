@@ -14,7 +14,8 @@
     </div>
     <div class="col2">
         Column 2:
-        <yield name="col2"></yield>
+        <!-- an unlabelled yield will match unlabelled payload -->
+        <yield></yield>
     </div>
     <div class="col3">
         Column 3:

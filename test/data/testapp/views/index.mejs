@@ -1,18 +1,19 @@
 <!-- wraps a template around us -->
 <parent src="layout.mejs" >
-    <payload yield="col1">
-        A user widget should go here:
-        <child src="users/user.mejs">
-          This content will be ignored.
-          <payload yield="extrafooter">This goes into the
-            footer.</payload>
-        </child>
-    </payload>
-    <payload yield="col2">
-        <h1><%= route.title %></h1>
-        <p>I am the <%= route.title %></p>
-    </payload>
-    <payload yield="col3">
-        Static content in column 3.
-    </payload>
+  <payload yield="col1">
+    A user widget should go here:
+    <child src="users/user.mejs">
+      This content will be ignored.
+      <payload yield="extrafooter">This goes into the footer.</payload>
+    </child>
+  </payload>
+  <payload yield="col3">
+    Static content in column 3.
+  </payload>
+  <!-- payloads not assigned to a specific yield point will go to the first
+  unlabelled, unused yield point -->
+  <payload>
+    <h1><%= route.title %></h1>
+    <p>I am the <%= route.title %></p>
+  </payload>
 </parent>
