@@ -7,13 +7,13 @@
       <payload yield="extrafooter">This goes into the footer.</payload>
     </child>
   </payload>
-  <payload yield="col3">
-    Static content in column 3.
-  </payload>
-  <!-- payloads not assigned to a specific yield point will go to the first
-  unlabelled, unused yield point -->
   <payload>
+    <!-- payloads not assigned to a specific yield point will go to the first
+    unlabelled, unused yield point -->
     <h1><%= route.title %></h1>
     <p>I am the <%= route.title %></p>
+  </payload>
+  <payload yield="col3">
+    Static content in column 3.
   </payload>
 </parent>

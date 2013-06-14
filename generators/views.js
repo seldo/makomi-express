@@ -92,19 +92,13 @@ exports.translateDom = function(dom,cb) {
             isHandled()
             break;
           case "child":
-            // TODO: translate and expand the child file
             // FIXME: parseRoot should be relative to the first file passed in
             var parseRoot = "./test/data/testapp/views/"
             // TODO: verify attribs.src exists
-            /*
             exports.parseFile(parseRoot+element.attribs.src,function(er,childDom) {
-              translated.con(childDom)
-              console.log("pushed stack resulting from parsing " + element.raw)
+              translated = translated.concat(childDom)
               isHandled()
             })
-            */
-            translated.push(element);
-            isHandled();
             break;
           case "payload":
             /*
@@ -155,6 +149,7 @@ exports.toHtml = function(dom,cb,depth) {
 
   var output = "";
 
+  // FIXME: I think this only works because everything in it is synchronous
   dom.forEach(function(element,index) {
     switch(element.type) {
       case "comment":
