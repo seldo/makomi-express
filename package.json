@@ -1,11 +1,12 @@
 {
-    "name": "makomi-express",
-    "version": "0.0.1",
-    "private": true,
-    "scripts": {
-    },
-    "dependencies": {
-        "tape": "*",
-        "htmlparser": "*"
-    }
+  "name": "makomi-express",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+  },
+  "dependencies": {
+    "tape": "*",
+    "htmlparser": "*",
+    "express-mock-request": "*"
+  }
 }

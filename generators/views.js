@@ -45,6 +45,59 @@ exports.parseFile = function(filename,cb) {
 }
 
 /**
+ * Look at every tag to see if it's a matching yieldpoint
+ * If so replace it with the payload
+ * Return the dom.
+ * Recurse into any children.
+ * FIXME: would yield multiple times for the same name. Good or bad?
+ * @param dom
+ * @param yieldpoint
+ * @param payload
+ */
+exports.recursiveYield = function(dom,yieldpoint,payload,cb) {
+
+  require('easy-splice')
+  var toHandle = dom.length;
+  var handled = function() {
+    toHandle--
+    if (toHandle == 0) {
+      cb(dom);
+    }
+  }
+
+  dom.forEach(function(element,index) {
+    // depth first
+    if(element.children) {
+      toHandle++
+      exports.recursiveYield(element.children,yieldpoint,payload,function(returnedDom) {
+        element.children = returnedDom
+        handled()
+      })
+    }
+    // now handle the tag itself
+    if(element.type == 'tag' && element.name == 'yield') {
+      // labelled
+      if (element.attribs && element.attribs.name) {
+        if (element.attribs.name == yieldpoint) {
+          console.log("Replaced yield " + yieldpoint + " with payload")
+          dom.usefulSplice(index,1,payload.children)
+        }
+      } else {
+        // unlabelled
+        if ( (!element.attribs || !element.attribs.name) && yieldpoint == '_unlabelled_') {
+          console.log("Replaced unlabelled yield with payload ")
+          dom.usefulSplice(index,1,payload.children)
+          console.log(dom)
+        }
+      }
+      // no other substitution cases
+    }
+    handled()
+  })
+}
+
+
+/**
  * Reads every sibling element at the current level of the dom
  * Transforms them as necessary
  * Recurses down into any children
@@ -53,6 +106,7 @@ exports.parseFile = function(filename,cb) {
  * @param cb
  */
 exports.translateDom = function(dom,cb) {
+  var htmlparser = require('htmlparser')
   // the translated dom
   var translated = []
   // content extracted from this level to be passed to yiel
@@ -78,22 +132,35 @@ exports.translateDom = function(dom,cb) {
         // handle children. Can I really do this out of sync without going crazy?
         if (element.children) {
           handled++
-          exports.translateDom(element.children,function(translated,payloads) {
+          exports.translateDom(element.children,function(translated,arrivingPayloads) {
+            // merge arriving payloads into our current payload stack
+            for(var p in arrivingPayloads) {
+              payloads[p] = arrivingPayloads[p]
+            }
             element.children = translated
-            // TODO: payload handling
             isHandled()
           })
         }
+        var parseRoot = "./test/data/testapp/views/"
         // decide what to do with the element itself
         switch(element.name) {
           case "parent":
-            translated.push(element)
-            console.log("ignored parent " + element.raw)
-            isHandled()
+            // load and render the parent
+            exports.parseFile(parseRoot + element.attribs.src,function(er,parentDom) {
+              // find the yield point, add children of parent to that yield point
+              var yieldpoints = htmlparser.DomUtils.getElementsByTagName('yield',parentDom)
+              // FIXME: do something much smarter to find the matching yieldpoints
+              for(var p in payloads) {
+                exports.recursiveYield(parentDom,p,payloads[p],function(modifiedDom) {
+                  parentDom = modifiedDom
+                })
+              }
+              translated = translated.concat(parentDom)
+              isHandled()
+            })
             break;
           case "child":
             // FIXME: parseRoot should be relative to the first file passed in
-            var parseRoot = "./test/data/testapp/views/"
             // TODO: verify attribs.src exists
             exports.parseFile(parseRoot+element.attribs.src,function(er,childDom) {
               translated = translated.concat(childDom)
@@ -107,9 +174,20 @@ exports.translateDom = function(dom,cb) {
              You're everything I need and more
              It's written all over your face
              */
-            // TODO: push payloads up the stack
-            translated.push(element)
-            console.log("ignored payload " + element.raw)
+            // if we find a payload, instead of including it at this level,
+            // we push it onto the payloads package to be passed back up the stack
+            if (element.attribs && element.attribs.yield) {
+              payloads[element.attribs.yield] = element
+              console.log("sent payload " + element.attribs.yield + " up the stack")
+            } else {
+              /*
+              TODO: This way handled multiple unlabelled payloads but we're not sure
+              if we're even gonna use this rendering engine so punt for now
+              if(!payloads['_unlabelled']) payloads['_unlabelled'] = [];
+              payloads['_unlabelled'].push(element)
+              */
+              payloads['_unlabelled_'] = element;
+            }
             isHandled()
             break;
           default:
@@ -155,6 +233,10 @@ exports.toHtml = function(dom,cb,depth) {
       case "comment":
         output += "<!-- " + element.raw + " -->"
         isHandled()
+        break;
+      case "directive":
+        output += "<!" + element.raw + ">"
+        isHandled();
         break;
       case "tag":
         output += "<" + element.raw + ">"
