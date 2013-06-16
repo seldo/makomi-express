@@ -56,7 +56,7 @@ exports.parseFile = function(filename,cb) {
  */
 exports.recursiveYield = function(dom,yieldpoint,payload,cb) {
 
-  require('easy-splice')
+  require('array-splice')
   var toHandle = dom.length;
   var handled = function() {
     toHandle--
