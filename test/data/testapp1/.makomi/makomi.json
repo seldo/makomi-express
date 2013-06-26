@@ -1,9 +1,22 @@
 {
   "name": "test-app-1",
+  "version": "0.0.1",
   "generators": {
     "router": "makomi-express",
     "controllers": "makomi-express",
     "views": "makomi-express"
   },
-  "renderer": "makomi-express"
+  "renderer": "makomi-express",
+  "dependencies": {
+    "express": "3.2.6",
+    "hbs": "*",
+    "stylus": "*",
+    "emcee": "*",
+    "cookies": "*",
+    "async": "*",
+    "socket.io": "*",
+    "connect": "*",
+    "socket.io-sessions": "*",
+    "makomi-express-runtime": "*"
+  }
 }

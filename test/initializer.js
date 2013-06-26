@@ -6,7 +6,7 @@ var test = require('tape');
 var initializer = require('../initializer.js');
 var fs = require('fs');
 
-test('list controller source files', function(t) {
+test('initialize app', function(t) {
 
   var controllerDir = "./test/data/testapp/controllers/"
   var expected = ['index.json','users.json']
