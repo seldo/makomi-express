@@ -1,6 +1,6 @@
 /**
- * Yes, we're testing that reading files works, because I was learning how to use tape.
- * Fuck you, I'm still new to all of this.
+ * Yes, we're testing that reading files works, because I was at this point
+ * still learning how to use tape (and node in general).
  */
 var test = require('tape');
 var generator = require('../generators/router.js');
