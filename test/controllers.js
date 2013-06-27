@@ -8,7 +8,7 @@ var fs = require('fs');
 
 test('list controller source files', function(t) {
 
-  var controllerDir = "./test/data/testapp/controllers/"
+  var controllerDir = "./test/data/testapp/.makomi/controllers/"
   var expected = ['index.json','users.json']
 
   t.plan(expected.length)
@@ -27,9 +27,10 @@ test('list controller source files', function(t) {
 
 test('generate controllers', function (t) {
 
-  var controllerDir = "./test/data/testapp/controllers/"
+  var controllerDir = "./test/data/testapp/.makomi/controllers/"
   var outputDir = "/tmp/controllers/";
   var expectedFiles = ['index.js','users.js']
+  var expectedFilePath = "./test/data/testapp/expected/expected.controller."
 
   t.plan(expectedFiles.length)
 
@@ -42,7 +43,7 @@ test('generate controllers', function (t) {
 
         // get expected file
         fs.readFile(
-          "./test/data/expected.controller." + filename,
+          expectedFilePath + filename,
           'utf-8',
           function(er,expectedBody) {
             // get actual file

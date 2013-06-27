@@ -4,7 +4,7 @@
  */
 var test = require('tape');
 var initializer = require('../../initializer.js');
-var fs = require('fs');
+var fs = require('fs-extra');
 
 test('initialize app', function(t) {
 
@@ -12,45 +12,39 @@ test('initialize app', function(t) {
   var outputDir = "/tmp/initializer/"
 
   var expectedFiles = ['package.json','app.js']
+  var expectedFolders = [
+    'controller',
+    'model',
+    'views',
+    'public/javascripts',
+    'public/stylesheets',
+    'test'
+  ]
 
-  // ensure our output directory exists
+  t.plan(expectedFiles.length+expectedFolders.length)
+
+  var testExistence = function(root,paths) {
+    paths.forEach(function(path) {
+      fs.exists(root+path, function (exists) {
+        t.ok(exists,path + " exists")
+      });
+    })
+  }
+
+  // clear our output directory before starting
+  fs.removeSync(outputDir);
   fs.mkdir(outputDir,null,function() {
 
-    t.plan(expected.length)
-
+    // initialize testapp1
     initializer.initialize(sourceDir,outputDir,function() {
 
-      expectedFiles.forEach(function(filename) {
+      // the other tests verify the content of the files
+      // here we just verify their existence and relative locations are correct
+      testExistence(outputDir,expectedFiles)
+      testExistence(outputDir,expectedFolders)
 
-        // get expected file
-        fs.readFile(
-          "./test/data/expected.controller." + filename,
-          'utf-8',
-          function(er,expectedBody) {
-            // get actual file
-            fs.readFile(outputDir + filename,'utf-8',function(er,actualBody) {
-              t.equal(actualBody,expectedBody)
-            })
-          }
-        )
-      })
-    });
+    })
 
   })
-
-});
-
-test('generate controllers', function (t) {
-
-  var controllerDir = "./test/data/testapp/controllers/"
-  var outputDir = "/tmp/controllers/";
-  var expectedFiles = ['index.js','users.js']
-
-  t.plan(expectedFiles.length)
-
-  // ensure our output directory exists
-  fs.mkdir(outputDir,null,function() {
-
-  }) // FIXME: Y U SO DEEPLY NESTED
 
 });

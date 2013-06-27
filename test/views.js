@@ -9,7 +9,7 @@ var util = require('util');
 
 test('parse a single template chain', function (t) {
 
-  var filename = "./test/data/testapp/views/index.mejs"
+  var filename = "./test/data/testapp/.makomi/views/index.mejs"
 
   generator.parseFile(filename,function(er,dom) {
     console.log("Generator expanded " + filename)

@@ -17,15 +17,18 @@ exports.initialize = function(sourceDir,outputDir,cb){
     }
   }
 
+  // TODO: check outputDir and sourceDir exist and make sense
+  // TODO: maybe checksum files to avoid overwriting manual edits?
+
   // TODO: if we override the app structure we do it here
   mkSrc.loadDefinition(sourceDir,function(definition) {
 
     var packageObject = exports.createPackage(definition);
     util.writeFile(
-      JSON.stringify(packageObject),
+      JSON.stringify(packageObject,null,2),
       'package.json',
       outputDir,
-      complete()
+      complete
     );
 
     var appFile = exports.createAppJS(definition);
@@ -33,13 +36,23 @@ exports.initialize = function(sourceDir,outputDir,cb){
       appFile,
       'app.js',
       outputDir,
-      complete()
+      complete
     )
 
-    var folders = ['controller','model','views','public/javascripts','public/stylesheets','test']
+    var folders = [
+      'controller',
+      'model',
+      'views',
+      'public/javascripts',
+      'public/stylesheets',
+      'test'
+    ]
     tasks += folders.length;
     folders.forEach(function(folder) {
-      fs.mkdirs(outputDir+folder,function() {
+      fs.mkdirs(outputDir+folder,function(err) {
+        if (err) {
+          console.log(err)
+        }
         complete()
       })
     })
@@ -59,6 +72,7 @@ exports.createPackage = function(definition) {
   return package;
 }
 
+// TODO: split sections into their own methods so we can test them independently
 exports.createAppJS = function(definition) {
 
   var out = "/**\n" +
@@ -155,8 +169,6 @@ exports.createAppJS = function(definition) {
 
   return out
 }
-
-
 
 /*
  exports.start = function(socketServer) {

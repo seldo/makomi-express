@@ -10,6 +10,8 @@ exports.writeFile = function (data, path, outputDir, cb) {
 
   var fs = require('fs');
 
+  console.log("Writing to " + path)
+
   var fullPath = outputDir + path
   fs.writeFile(fullPath, data, function (er) {
     if (er) {

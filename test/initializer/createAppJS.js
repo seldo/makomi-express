@@ -7,7 +7,7 @@ var initializer = require('../../initializer.js');
 var fs = require('fs');
 var mkSrc = require('makomi-source-util');
 
-test('app file creation, line by line', function(t) {
+test('create package.json', function(t) {
 
   var sourceDir = "./test/data/testapp1/"
   var expectedOutputFile = "./test/data/expected.app.js"
