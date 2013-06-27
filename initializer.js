@@ -1,95 +1,179 @@
 var mkSrc = require('makomi-source-util'),
-    mkRun = require('makomi-express-runtime');
+    mkRun = require('makomi-express-runtime'),
+    util = require('./util.js'),
+    fs = require('fs-extra'),
+    _ = require('underscore');
 
 /**
  * Create a new app skeleton, e.g. npm install express or whatever
  */
 exports.initialize = function(sourceDir,outputDir,cb){
 
+  var tasks = 2;
+  var complete = function() {
+    tasks--;
+    if (tasks == 0) {
+      cb()
+    }
+  }
+
   // TODO: if we override the app structure we do it here
-  mkRun.util.loadConfig(null,function(appConfig) {
-    mk
-  })
-  mkSrc.init(
-    {
+  mkSrc.loadDefinition(sourceDir,function(definition) {
 
-    },
-    {
+    var packageObject = exports.createPackage(definition);
+    util.writeFile(
+      JSON.stringify(packageObject),
+      'package.json',
+      outputDir,
+      complete()
+    );
 
-    }
-  );
+    var appFile = exports.createAppJS(definition);
+    util.writeFile(
+      appFile,
+      'app.js',
+      outputDir,
+      complete()
+    )
 
-  /*
-  var express = require('express'),
-    http = require('http'),
-    connect = require('connect'),
-    io = require('socket.io'),
-    sio = require('socket.io-sessions'),
-    path = require('path'),
-    Cookies = require('cookies'),
-    socketController = require('./controllers/sockets'),
-    mkEx = require('makomi-express-runtime');
+    var folders = ['controller','model','views','public/javascripts','public/stylesheets','test']
+    tasks += folders.length;
+    folders.forEach(function(folder) {
+      fs.mkdirs(outputDir+folder,function() {
+        complete()
+      })
+    })
 
-  var app = express();
-
-// all environments
-  app.set('port', process.env.PORT || 3000);
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'hbs');
-  app.use(express.favicon());
-  app.use(express.logger('dev'));
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-
-// app-wide config loaded once per thread
-  var appConfigFile = process.env.MAKOMICONF || '/etc/makomi/makomi.conf'
-  appConfig = {} // this is available globally once loaded
-  mkEx.util.loadConfig(appConfigFile,function(config) {
-
-    appConfig = config;
-
-    // sessions
-    var MemoryStore = require('connect/lib/middleware/session/memory');
-    var sessionStore = new MemoryStore;
-    app.use(express.cookieParser());
-    // FIXME: is this actually sufficient to set a secret?
-    // Does it also need to be passed to the cookieParser?
-    app.use(express.session({
-      secret: appConfig.sessions.secret,
-      store: sessionStore
-    }));
-
-    // define routes in their own file because that seems better
-    app.use(app.router);
-    require('./router.js')(app);
-
-    app.use(require('stylus').middleware(__dirname + '/public'));
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    // development only
-    if ('development' == app.get('env')) {
-      app.use(express.errorHandler());
-    }
-
-    // start the server
-    var server = http.createServer(app).listen(app.get('port'), function(){
-      console.log('Express server with Socket.io listening on port ' + app.get('port'));
-    });
-
-    // tell Socket.io to listen to the server, too.
-    // If you don't do it this way, socket takes over all HTTP requests.
-    // It is not at all obvious to me why this works.
-    var socketServer = io.listen(server,{log: false})
-
-    // set up the socket listeners, with session support
-    var sessionSocketServer = sio.enable({
-      socket: socketServer,         // Socket.IO listener
-      store:  sessionStore,                // Your session store
-      parser: connect.cookieParser()  // Cookie parser
-    });
-    socketController.start(socketServer)
-
-  })
-*/
+  });
 
 }
+
+exports.createPackage = function(definition) {
+  // FIXME: insufficient, but enough for npm to work
+  var package = {
+    name: definition.name,
+    version: definition.version,
+    private: true,
+    dependencies: definition.dependencies
+  }
+  return package;
+}
+
+exports.createAppJS = function(definition) {
+
+  var out = "/**\n" +
+    " * GENERATED MAKOMI APP: " + definition.name + "\n" +
+    " * IF YOU EDIT THIS YOUR CHANGES WILL BE LOST WHEN YOU RECOMPILE\n" +
+    " */\n\n"
+
+  var requiredPackages = {
+    'express':'express',
+    'Cookies':'cookies',
+    'connect':'connect',
+    'path':'path',
+    'io':'socket.io',
+    'sio':'socket.io-sessions',
+    'MemoryStore':'connect/lib/middleware/session/memory',
+    'socketController':'./controllers/sockets',
+    'mkEx':'makomi-express-runtime'
+  }
+  out += 'var '
+  out += _.map(requiredPackages,function(value,key,list) {
+    return key + " = require('" + value + "')"
+  }).join(",\n  ") + ";\n\n"
+
+  out += "// boot express\n"
+  out += "var app = express();\n\n"
+
+  out += "// configure express\n"
+  var sets = {
+    "port":"process.env.PORT || 3000",
+    "views":"__dirname + '/views'",
+    "view engine":"hbs"
+  }
+
+  out += _.map(sets,function(value,key,list) {
+    return "app.set('" + key + "', " + value + ");"
+  }).join("\n") + "\n\n"
+
+  out += "// standard middleware\n"
+  var uses = [
+    "express.favicon()",
+    "express.logger('dev')",
+    "express.bodyParser()",
+    "express.methodOverride()"
+  ]
+
+  out += _.map(uses,function(middleware) {
+    return "app.use(" + middleware + ");"
+  }).join("\n") + "\n\n"
+
+  out += "// load application-level config once per node\n"
+  out += "var appConfigFile = process.env.MAKOMICONF || '/etc/makomi/makomi.conf'\n" +
+    "appConfig = {} // this is available globally once loaded\n\n" +
+    "// everything in here waits until config is available\n" +
+    "mkEx.util.loadConfig(appConfigFile,function(config) {\n"
+
+  out += "  appConfig = config;\n\n"
+
+  out += "  // sessions\n" +
+    "  var sessionStore = new MemoryStore;\n" +
+    "  app.use(express.cookieParser());\n" +
+    "  app.use(express.session({\n" +
+    "    secret: appConfig.sessions.secret,\n" +
+    "    store: sessionStore\n" +
+    "  }));\n\n"
+
+  out += "  // router\n" +
+    "  app.use(app.router);\n" +
+    "  require('./router.js')(app);\n\n"
+
+  out += "  // stylesheets and static content\n" +
+    "  app.use(require('stylus').middleware(__dirname + '/public'));\n" +
+    "  app.use(express.static(path.join(__dirname, 'public')));\n\n"
+
+  out += "  // dev-only middleware\n" +
+    "  if ('development' == app.get('env')) {\n" +
+    "    app.use(express.errorHandler());\n" +
+    "  }\n\n"
+
+  out += "  // start the server\n" +
+    "  var server = http.createServer(app).listen(app.get('port'), function(){\n" +
+    "    console.log('" + definition.name + " listening on port ' + app.get('port'));\n" +
+    "  });\n\n"
+
+  out += "  // start websocket support (sorry, socket.io's magic, not mine)\n" +
+    "  var socketServer = io.listen(server,{log: false})\n" +
+    "  var sessionSocketServer = sio.enable({\n" +
+    "    socket: socketServer,\n" +
+    "    store:  sessionStore,\n" +
+    "    parser: connect.cookieParser()\n" +
+    "  });\n" +
+    "  socketController.start(socketServer)\n"
+
+  out += "});\n"
+
+  return out
+}
+
+
+
+/*
+ exports.start = function(socketServer) {
+ socketServer.on('sconnection', function (client,session) {
+
+ client.on('routechange-in', function (data) {
+ console.log("Route selected: " + data.route);
+ socketServer.sockets.emit('routechange-out', {
+ route: data.route,
+ project: session.config.project
+ })
+ });
+
+ client.on('disconnect', function () {
+ socketServer.sockets.emit('user disconnected');
+ });
+ });
+ }
+ */
+

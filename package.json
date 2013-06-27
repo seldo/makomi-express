@@ -7,6 +7,8 @@
   "dependencies": {
     "tape": "*",
     "htmlparser": "*",
-    "express-mock-request": "*"
+    "express-mock-request": "*",
+    "fs-extra": "*",
+    "underscore": "*"
   }
 }
