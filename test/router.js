@@ -10,8 +10,8 @@ test('generate routing file', function (t) {
 
     t.plan(1);
 
-    var routingFile = "./test/data/testapp/.makomi/routes.json"
-    var expectedOutputFile = "./test/data/testapp/expected/expected.router.js"
+    var routingFile = "./test/data/testapp1/.makomi/routes.json"
+    var expectedOutputFile = "./test/data/testapp1/expected/expected.router.js"
 
     generator.read(routingFile,function(er,routerString) {
         generator.parse(routerString,function(er,routerObject) {

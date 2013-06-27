@@ -1,3 +1,5 @@
+var _ = require('underscore')
+
 /**
  * Given a routing file's location and output location, parse the routes
  * and write a router file to disk
@@ -50,35 +52,26 @@ exports.parse = function(routerString,cb) {
 exports.generator = function(routerObject,cb) {
     var output =
         "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
-        "// The droid you're looking for is .makomi/routes.json\n" +
+        "// The droid you're looking for is .makomi/routes.json\n\n" +
         "module.exports = function(app){\n";
 
     // map all the routes and build a list of active controllers
-    var controllers = {};
-    var routes = [];
-    Object.keys(routerObject).forEach(function(path) {
-        var route = routerObject[path];
-        controllers[route.controller] = true;
-        routes.push(
-            "app.get('" + path + "', " + route.controller + "." + route.action + ");"
-        )
+    var controllers = [];
+    var routes = _.map(routerObject,function(route,path,list) {
+      controllers.push(route.controller)
+      return "app.get('" + path + "', " + route.controller + "." + route.action + ");"
     });
 
-    // get array of controllers
-    var uniqueControllers = [];
-    for(var controller in controllers) {
-        uniqueControllers.push(controller);
-    }
+    // de-dupe the controllers
+    var uniqueControllers = _.uniq(controllers);
 
     // output the controllers
     output += "  var " + uniqueControllers.map(function(controller) {
         return controller + " = require('./controllers/" + controller + "')"
-    }).join("\n    , ") + ";\n"
+    }).join("\n    , ") + ";\n\n"
 
     // output the routes
-    routes.forEach(function(route) {
-        output += "  " + route + "\n";
-    })
+    output += "  " + routes.join("\n  ") + "\n"
 
     output += "}\n"
 
