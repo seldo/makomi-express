@@ -26,5 +26,9 @@
   "/more-news/page/:page": {
     "controller": "news",
     "action": "more"
+  },
+  "/basic/flat": {
+    "controller": "basic",
+    "action": "flat"
   }
 }

@@ -1,3 +1,5 @@
+var fs = require('fs');
+
 /**
  * Given a controller directory and output directory
  * Parse each controller description and output an equivalent controller
@@ -30,17 +32,62 @@ exports.generate = function (controllerDir, outputDir, cb) {
 }
 
 /**
- * Get a list of all the controller file names in the controller directory.
+ * Read all the JSON files in a controller directory and create an _actions file
  * @param controllerDir
  * @param cb
  */
-exports.findFiles = function (controllerDir, cb) {
+exports.createActions = function(rootDir,controller,cb) {
 
-  var fs = require('fs');
+  var output =
+    "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
+    "// This is generated based on the files that exist in .makomi/controllers/" + controller + "\n\n"
 
-  fs.readdir(controllerDir, function (er, files) {
+  exports.listJSONFiles(rootDir+controller,function(actions) {
+
+    output += actions.map(function(action) {
+      return "exports." + action + " = require('./" + action + "')\n"
+    })
+
+    cb(output)
+  })
+}
+
+/**
+ * Find JSON files in a given directory, return as an array of bare names
+ * @param dir
+ * @param cb
+ */
+exports.listJSONFiles = function(dir,cb) {
+  exports.findFiles(dir,function(er,rawFiles) {
+
+    var fileList = []
+
+    // FIXME: doesn't return if there are no files
+    var count = rawFiles.length
+    var complete = function() {
+      count--
+      if (count==0) cb(fileList)
+    }
+
+    rawFiles.forEach(function(file) {
+      // FIXME: no error handling here either
+      var filePart = file.split('.')
+      if(filePart[1] == 'json') fileList.push(filePart[0])
+      complete()
+    })
+
+  })
+}
+
+/**
+ * Get a list of all the file names in a directory.
+ * @param dir
+ * @param cb
+ */
+exports.findFiles = function (dir, cb) {
+
+  fs.readdir(dir, function (er, files) {
     // FIXME: handle errors
-    // TODO: filter things that are not JSON
     cb(er,files)
   })
 }
@@ -51,7 +98,6 @@ exports.findFiles = function (controllerDir, cb) {
  * @param cb
  */
 exports.read = function (file, cb) {
-  var fs = require('fs');
   fs.readFile(file, 'utf-8', cb);
 }
 
@@ -110,8 +156,6 @@ exports.generator = function (controllerObject, cb) {
  * @param cb
  */
 exports.write = function (fileObject, outputDir, cb) {
-
-  var fs = require('fs');
 
   var path = outputDir + fileObject.name
   fs.writeFile(path, fileObject.body, function (er) {

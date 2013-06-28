@@ -3,7 +3,7 @@
  * @type {*}
  */
 var test = require('tape');
-var generator = require('../generators/controllers.js');
+var generator = require('../../generators/controllers.js');
 var fs = require('fs');
 
 test('list controller source files', function(t) {

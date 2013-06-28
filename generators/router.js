@@ -59,7 +59,7 @@ exports.generator = function(routerObject,cb) {
     var controllers = [];
     var routes = _.map(routerObject,function(route,path,list) {
       controllers.push(route.controller)
-      return "app.get('" + path + "', " + route.controller + "." + route.action + ");"
+      return "app.get('" + path + "', " + route.controller + "." + route.action + "/_actions);"
     });
 
     // de-dupe the controllers

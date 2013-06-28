@@ -1,0 +1,19 @@
+{
+  "description": "Flat controller, no models",
+  "models": {
+  },
+  "layout": {
+    "source": "layouts/default",
+    "context": {
+      "title": "Generated Hello, World app"
+    },
+    "templates": {
+      "col1": {
+        "source": "basic/flat",
+        "context": {
+          "foo": "bar"
+        }
+      }
+    }
+  }
+}
