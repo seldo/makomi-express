@@ -1,4 +1,5 @@
 var fs = require('fs');
+var _ = require('underscore');
 
 /**
  * Given a controller directory and output directory
@@ -37,34 +38,73 @@ exports.generate = function (controllerDir, outputDir, cb) {
 /**
  * Parse an action JSON file and generate the equivalent JS.
  * This is the heart of a makomi output engine.
- * @param rootDir
+ * @param controllerDir The directory with all the controller source files
  * @param action
  * @param cb
  */
-exports.createAction = function(rootDir,controller,action,cb) {
+exports.createAction = function(controllerDir,controller,action,cb) {
 
-  var output =
-    "// AUTOMATICALLY GENERATED. DO NOT EDIT (yet).\n" +
-      "// The droid you're looking for is .makomi/controllers/" + controller + ".json\n" +
+  var fileReady = function(er,data) {
+
+    // TODO: handle parse errors etc.
+    var actionObject = JSON.parse(data);
+
+    var output = "// " + actionObject.description + "\n\n"
+
+    output +=
+      "// AUTOMATICALLY GENERATED. DO NOT EDIT (yet).\n" +
+      "// The droid you're looking for is .makomi/controllers/" + controller + "/" + action + ".json\n" +
       "// Some day, we'll allow you to edit this file and import changes back to the source.\n\n"
 
-  // TODO: data sources etc.
-
-  controllerObject.actions.forEach(function(action) {
-    output += "// " + action.description + "\n"
-    output += "exports." + action.name + " = function(req,res){\n"
-    output += "  res.render('" + action.view.name + "', " + JSON.stringify(action.view.params) + ");\n"
-    output += "};\n\n"
-  })
-
-  cb(
-    null, // FIXME: catch errors, put 'em here
-    {
-      name: controller + ".js",
-      body: output
+    var requires = {
+      "MC": "emcee",
+      "mkRun": "makomi-express-runtime"
+      // TODO: add models to the list of requires
     }
+
+    // writing javascript in javascript remains wacky-looking
+    output += "var " + _.map(requires,function(packageName,localName,list) {
+      return localName + " = require('" + packageName + "')"
+    }).join(",\n  ") + ";\n\n"
+
+    // an action file exports only one method, the action itself
+    output += "module.exports = function(req, res) {\n\n"
+
+    output += "  // load models, then do stuff\n" +
+      "  var m = new MC();\n";
+
+    // TODO: load models here, e.g.
+    // m.load('model-name-here', req, appConfig)
+
+    output += "  m.end(function(er,models) {\n\n"
+
+    // TODO: translate placeholders in the layout object into code, not strings
+    output += "    // define the data that will be passed to the view engine\n"
+    output += "    var layout = " + indent(JSON.stringify(actionObject.layout,null,2),4) + ";\n\n"
+
+    // TODO: just calling "send" is nowhere near good enough
+    output += "    // call the view engine\n" +
+      "    mkRun.compile(layout,function(renderedView) {\n" +
+      "      res.send(renderedView)\n" +
+      "    });\n"
+
+    output += "  });\n\n"
+    output += "};\n"
+
+    cb(output)
+  }
+
+  // now actually do all that stuff
+  fs.readFile(
+    controllerDir+controller+'/'+action+'.json',
+    'utf-8',
+    fileReady
   )
 
+}
+
+var indent = function(string,size) {
+  return string.split("\n").join("\n" + Array(size+1).join(" "))
 }
 
 /**
