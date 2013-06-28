@@ -3,33 +3,62 @@
  * @type {*}
  */
 var test = require('tape');
-var initializer = require('../../generators/controllers.js');
+var generator = require('../../generators/controllers.js');
 var fs = require('fs-extra');
-var mkSrc = require('makomi-source-util');
 
-test('create basic controller, flat action', function(t) {
+test('create flat action of basic controller', function(t) {
 
-  var sourceDir = "./test/data/testapp1/"
-  var expectedOutputFile = "./test/data/expected.app.js"
+  var sourceDir = "./test/data/testapp1/.makomi/controllers/"
+  var controller = "basic"
+  var action = "flat"
+  var expectedOutputFile = "./test/data/testapp1/expected/controllers/basic/expected.flat.js"
 
+  /*
   var compareToGeneratedFile = function(er,expected) {
-    mkSrc.loadDefinition(sourceDir,function(definition) {
-      var output = initializer.createAppJS(definition)
-      var expectedLines = expected.split("\n")
+    generator.createAction(sourceDir,controller,action,function(output) {
       var outputLines = output.split("\n")
+      var expectedLines = expected.split("\n")
 
       t.plan(outputLines.length)
 
       outputLines.forEach(function(line,index) {
         t.equal(line,expectedLines[index])
       })
+
     })
   }
 
-  var expectedFile = fs.readFile(
+  fs.readFile(
     expectedOutputFile,
     'utf-8',
     compareToGeneratedFile
   )
+  */
+
+  compareToExpectedOutput(t,expectedOutputFile,function(callWithOutput){
+    generator.createAction(sourceDir,controller,action,function(output) {
+      callWithOutput(output)
+    })
+  })
 
 });
+
+var compareToExpectedOutput = function(test,expectedOutputFile,toCompare) {
+
+  toCompare(function(output) {
+    fs.readFile(
+      expectedOutputFile,
+      'utf-8',
+      function(er,expected) {
+        var outputLines = output.split("\n")
+        var expectedLines = expected.split("\n")
+
+        test.plan(outputLines.length)
+
+        outputLines.forEach(function(line,index) {
+          test.equal(line,expectedLines[index])
+        })
+      }
+    )
+  })
+}

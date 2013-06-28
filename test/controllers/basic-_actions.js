@@ -5,8 +5,7 @@
  */
 var test = require('tape');
 var generator = require('../../generators/controllers.js');
-var fs = require('fs-extra');
-var mkSrc = require('makomi-source-util');
+var testUtil = require('../util')
 
 test('create actions file for basic controller', function(t) {
 
@@ -14,25 +13,10 @@ test('create actions file for basic controller', function(t) {
   var controller = "basic"
   var expectedOutputFile = "./test/data/testapp1/expected/controllers/basic/expected._actions.js"
 
-  var compareToGeneratedFile = function(er,expected) {
+  testUtil.compareToExpectedOutput(t,expectedOutputFile,function(callWithOutput){
     generator.createActions(sourceDir,controller,function(output) {
-      console.log(output)
-
-      var outputLines = output.split("\n")
-      var expectedLines = expected.split("\n")
-
-      t.plan(outputLines.length)
-
-      outputLines.forEach(function(line,index) {
-        t.equal(line,expectedLines[index])
-      })
-    });
-  }
-
-  var expectedFile = fs.readFile(
-    expectedOutputFile,
-    'utf-8',
-    compareToGeneratedFile
-  )
+      callWithOutput(output)
+    })
+  })
 
 });

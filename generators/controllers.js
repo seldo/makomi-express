@@ -2,7 +2,8 @@ var fs = require('fs');
 
 /**
  * Given a controller directory and output directory
- * Parse each controller description and output an equivalent controller
+ * Parse each action file and generate action files for each controller
+ * Plus an _actions file to glue each controller together
  */
 
 exports.generate = function (controllerDir, outputDir, cb) {
@@ -10,12 +11,14 @@ exports.generate = function (controllerDir, outputDir, cb) {
 
     // the controllers are independent so we can read them all in parallel,
     // parse them in parallel, and just say when we're done.
+    // FIXME: this doesn't work anymore
+    /*
     var count = fileList.length;
     fileList.forEach(function (file) {
       exports.read(controllerDir + file, function (er, fileString) {
         exports.parse(fileString, function (er, fileObject) {
           exports.generator(fileObject, function (er, controllerFile) {
-            exports.write(controllerFile, outputDir, function (er) {
+            exports.write(outputDir, function (er) {
               count--;
               if (count == 0) {
                 console.log("Generated controllers")
@@ -26,9 +29,42 @@ exports.generate = function (controllerDir, outputDir, cb) {
         })
       })
     })
-    // FIXME: this nesting kind of looks like a node parody. What am I doing wrong?
+    */
 
   })
+}
+
+/**
+ * Parse an action JSON file and generate the equivalent JS.
+ * This is the heart of a makomi output engine.
+ * @param rootDir
+ * @param action
+ * @param cb
+ */
+exports.createAction = function(rootDir,controller,action,cb) {
+
+  var output =
+    "// AUTOMATICALLY GENERATED. DO NOT EDIT (yet).\n" +
+      "// The droid you're looking for is .makomi/controllers/" + controller + ".json\n" +
+      "// Some day, we'll allow you to edit this file and import changes back to the source.\n\n"
+
+  // TODO: data sources etc.
+
+  controllerObject.actions.forEach(function(action) {
+    output += "// " + action.description + "\n"
+    output += "exports." + action.name + " = function(req,res){\n"
+    output += "  res.render('" + action.view.name + "', " + JSON.stringify(action.view.params) + ");\n"
+    output += "};\n\n"
+  })
+
+  cb(
+    null, // FIXME: catch errors, put 'em here
+    {
+      name: controller + ".js",
+      body: output
+    }
+  )
+
 }
 
 /**
@@ -85,7 +121,6 @@ exports.listJSONFiles = function(dir,cb) {
  * @param cb
  */
 exports.findFiles = function (dir, cb) {
-
   fs.readdir(dir, function (er, files) {
     // FIXME: handle errors
     cb(er,files)
@@ -114,40 +149,6 @@ exports.parse = function (fileString, cb) {
 }
 
 /**
- * This is the interesting bit. Given the instructions in the controller file,
- * write an Express-y controller script.
- *
- * @param routerObject
- * @param cb
- */
-exports.generator = function (controllerObject, cb) {
-
-  var controller = controllerObject.name
-
-  var output =
-    "// AUTOMATICALLY GENERATED. DO NOT EDIT (yet).\n" +
-    "// The droid you're looking for is .makomi/controllers/" + controller + ".json\n" +
-    "// Some day, we'll allow you to edit this file and import changes back to the source.\n\n"
-
-  // TODO: in future we will need to handle data sources here, and be much cleverer in general
-
-  controllerObject.actions.forEach(function(action) {
-    output += "// " + action.description + "\n"
-    output += "exports." + action.name + " = function(req,res){\n"
-    output += "  res.render('" + action.view.name + "', " + JSON.stringify(action.view.params) + ");\n"
-    output += "};\n\n"
-  })
-
-  cb(
-    null, // FIXME: catch errors, put 'em here
-    {
-      name: controller + ".js",
-      body: output
-    }
-  )
-}
-
-/**
  * Given a file "object", which contains a name and the file body, write that file
  * We are given the output dir for all these.
  * We may need some logic here to handle wacky/erroneous output locations/names.
@@ -155,10 +156,10 @@ exports.generator = function (controllerObject, cb) {
  * @param outputDir
  * @param cb
  */
-exports.write = function (fileObject, outputDir, cb) {
+exports.write = function (dir, name, body, cb) {
 
-  var path = outputDir + fileObject.name
-  fs.writeFile(path, fileObject.body, function (er) {
+  var path = dir + name
+  fs.writeFile(path, body, function (er) {
     if (er) {
       console.log(er);
     } else {
