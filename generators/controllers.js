@@ -10,10 +10,29 @@ var _ = require('underscore');
  */
 exports.generate = function(rootDir, outputDir, cb) {
 
-  // the controllers are independent so we can read them all in parallel,
-  // parse them in parallel, and just say when we're done.
+  // first find the controller directories in the root
+  var controllersDir = rootDir + 'controllers/'
+  console.log("Looking for controllers in " + controllersDir)
+  exports.findFiles(controllersDir, function(er,controllers) {
 
-  exports.findFiles()
+    // TODO: filter out things that are not controllers?
+
+    // the controllers are independent so we can read them all in parallel,
+    // parse them in parallel, and just say when we're done.
+    var count = controllers.length
+    var complete = function() {
+      count--
+      // TODO: what if no controllers exist?
+      if(count == 0) cb()
+    }
+
+    controllers.forEach(function(controller) {
+      exports.createController(rootDir,controller,outputDir,function() {
+        complete()
+      })
+    })
+
+  })
 
 }
 
