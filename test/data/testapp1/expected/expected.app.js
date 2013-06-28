@@ -4,13 +4,13 @@
  */
 
 var express = require('express'),
+  http = require('http'),
   Cookies = require('cookies'),
   connect = require('connect'),
   path = require('path'),
   io = require('socket.io'),
   sio = require('socket.io-sessions'),
   MemoryStore = require('connect/lib/middleware/session/memory'),
-  socketController = require('./controllers/sockets'),
   mkEx = require('makomi-express-runtime');
 
 // boot express
@@ -19,7 +19,7 @@ var app = express();
 // configure express
 app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');
-app.set('view engine', hbs);
+app.set('view engine', 'hbs');
 
 // standard middleware
 app.use(express.favicon());
@@ -68,5 +68,5 @@ mkEx.util.loadConfig(appConfigFile,function(config) {
     store:  sessionStore,
     parser: connect.cookieParser()
   });
-  socketController.start(socketServer)
+  mkEx.misc.socketController.start(socketServer)
 });

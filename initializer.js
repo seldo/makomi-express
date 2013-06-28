@@ -40,8 +40,8 @@ exports.initialize = function(sourceDir,outputDir,cb){
     )
 
     var folders = [
-      'controller',
-      'model',
+      'controllers',
+      'models',
       'views',
       'public/javascripts',
       'public/stylesheets',
@@ -82,13 +82,13 @@ exports.createAppJS = function(definition) {
 
   var requiredPackages = {
     'express':'express',
+    'http':'http',
     'Cookies':'cookies',
     'connect':'connect',
     'path':'path',
     'io':'socket.io',
     'sio':'socket.io-sessions',
     'MemoryStore':'connect/lib/middleware/session/memory',
-    'socketController':'./controllers/sockets',
     'mkEx':'makomi-express-runtime'
   }
   out += 'var '
@@ -103,7 +103,7 @@ exports.createAppJS = function(definition) {
   var sets = {
     "port":"process.env.PORT || 3000",
     "views":"__dirname + '/views'",
-    "view engine":"hbs"
+    "view engine":"'hbs'"
   }
 
   out += _.map(sets,function(value,key,list) {
@@ -163,29 +163,9 @@ exports.createAppJS = function(definition) {
     "    store:  sessionStore,\n" +
     "    parser: connect.cookieParser()\n" +
     "  });\n" +
-    "  socketController.start(socketServer)\n"
+    "  mkEx.misc.socketController.start(socketServer)\n"
 
   out += "});\n"
 
   return out
 }
-
-/*
- exports.start = function(socketServer) {
- socketServer.on('sconnection', function (client,session) {
-
- client.on('routechange-in', function (data) {
- console.log("Route selected: " + data.route);
- socketServer.sockets.emit('routechange-out', {
- route: data.route,
- project: session.config.project
- })
- });
-
- client.on('disconnect', function () {
- socketServer.sockets.emit('user disconnected');
- });
- });
- }
- */
-

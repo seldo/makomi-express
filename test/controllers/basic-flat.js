@@ -8,7 +8,7 @@ var testUtil = require('../util');
 
 test('create flat action of basic controller', function(t) {
 
-  var sourceDir = "./test/data/testapp1/.makomi/controllers/"
+  var sourceDir = "./test/data/testapp1/.makomi/controllers/basic/"
   var controller = "basic"
   var action = "flat"
   var expectedOutputFile = "./test/data/testapp1/expected/controllers/basic/expected.flat.js"

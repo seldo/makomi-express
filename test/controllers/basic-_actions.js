@@ -9,7 +9,7 @@ var testUtil = require('../util')
 
 test('create actions file for basic controller', function(t) {
 
-  var sourceDir = "./test/data/testapp1/.makomi/controllers/"
+  var sourceDir = "./test/data/testapp1/.makomi/controllers/basic/"
   var controller = "basic"
   var expectedOutputFile = "./test/data/testapp1/expected/controllers/basic/expected._actions.js"
 

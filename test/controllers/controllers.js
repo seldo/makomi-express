@@ -4,30 +4,11 @@
  */
 var test = require('tape');
 var generator = require('../../generators/controllers.js');
-var fs = require('fs');
-
-test('list controller source files', function(t) {
-
-  var controllerDir = "./test/data/testapp/.makomi/controllers/"
-  var expected = ['index.json','users.json']
-
-  t.plan(expected.length)
-
-  generator.findFiles(controllerDir,function(er,files){
-    expected.forEach(function(expectedFile) {
-      t.notEqual(
-        files.indexOf(expectedFile),
-        -1,
-        "file " + expectedFile + " present in the list"
-      )
-    })
-  })
-
-});
+var fs = require('fs-extra');
 
 test('generate controllers', function (t) {
 
-  var controllerDir = "./test/data/testapp/.makomi/controllers/"
+  var rootDir = "./test/data/testapp/.makomi/"
   var outputDir = "/tmp/controllers/";
   var expectedFiles = ['index.js','users.js']
   var expectedFilePath = "./test/data/testapp/expected/expected.controller."

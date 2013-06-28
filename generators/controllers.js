@@ -1,36 +1,75 @@
-var fs = require('fs');
+var fs = require('fs-extra');
 var _ = require('underscore');
+
+/**
+ * Given the root of the controllers, find each controller
+ * Generate _actions and action files for each controller
+ * @param rootDir     source root, i.e. .makomi
+ * @param outputDir   controllers directory of the output app
+ * @param cb          called when all files written
+ */
+exports.generate = function(rootDir, outputDir, cb) {
+
+  // the controllers are independent so we can read them all in parallel,
+  // parse them in parallel, and just say when we're done.
+
+  exports.findFiles()
+
+}
 
 /**
  * Given a controller directory and output directory
  * Parse each action file and generate action files for each controller
  * Plus an _actions file to glue each controller together
+ * @param rootDir     source root, i.e. .makomi
+ * @param controller  name of the controller, e.g. users
+ * @param outputDir   controllers directory of the output app
+ * @param cb          called when all files written to output
  */
+exports.createController = function(rootDir, controller, outputDir, cb) {
 
-exports.generate = function (controllerDir, outputDir, cb) {
-  exports.findFiles(controllerDir, function (er, fileList) {
+  var controllerDir = rootDir + 'controllers/' + controller + '/'
 
-    // the controllers are independent so we can read them all in parallel,
-    // parse them in parallel, and just say when we're done.
-    // FIXME: this doesn't work anymore
-    /*
-    var count = fileList.length;
-    fileList.forEach(function (file) {
-      exports.read(controllerDir + file, function (er, fileString) {
-        exports.parse(fileString, function (er, fileObject) {
-          exports.generator(fileObject, function (er, controllerFile) {
-            exports.write(outputDir, function (er) {
-              count--;
-              if (count == 0) {
-                console.log("Generated controllers")
-                cb()
-              }
-            })
-          })
+  fs.mkdirs(outputDir+controller,null,function() {
+
+    exports.listJSONFiles(controllerDir, function(actions) {
+
+      var count = actions.length
+      var complete = function() {
+        count--
+        if (count==0) cb()
+      }
+
+      // output _actions file
+      count++
+      exports.createActions(controllerDir,controller,function(body) {
+        exports.write(
+          outputDir+controller+'/',
+          '_actions.js',
+          body,
+          function(er) {
+            // TODO: error handling
+            complete()
+          }
+        )
+      })
+
+      // output individual actions
+      actions.forEach(function(action) {
+        exports.createAction(controllerDir,controller,action,function(actionBody) {
+          exports.write(
+            outputDir+controller+'/',
+            action+'.js',
+            actionBody,
+            function(er) {
+              // TODO: error handling
+              complete()
+            }
+          )
         })
       })
+
     })
-    */
 
   })
 }
@@ -38,7 +77,7 @@ exports.generate = function (controllerDir, outputDir, cb) {
 /**
  * Parse an action JSON file and generate the equivalent JS.
  * This is the heart of a makomi output engine.
- * @param controllerDir The directory with all the controller source files
+ * @param controllerDir The directory with the source files for this controller, e.g. controllers/user
  * @param action
  * @param cb
  */
@@ -95,8 +134,9 @@ exports.createAction = function(controllerDir,controller,action,cb) {
   }
 
   // now actually do all that stuff
+  var controllerFile = controllerDir+action+'.json'
   fs.readFile(
-    controllerDir+controller+'/'+action+'.json',
+    controllerFile,
     'utf-8',
     fileReady
   )
@@ -109,16 +149,17 @@ var indent = function(string,size) {
 
 /**
  * Read all the JSON files in a controller directory and create an _actions file
- * @param controllerDir
+ * @param controllerDir The directory with the source files for this controller, e.g. controllers/user
+ * @param controller    The name of the controller (used only to generate a comment)
  * @param cb
  */
-exports.createActions = function(rootDir,controller,cb) {
+exports.createActions = function(controllerDir,controller,cb) {
 
   var output =
     "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
     "// This is generated based on the files that exist in .makomi/controllers/" + controller + "\n\n"
 
-  exports.listJSONFiles(rootDir+controller,function(actions) {
+  exports.listJSONFiles(controllerDir,function(actions) {
 
     output += actions.map(function(action) {
       return "exports." + action + " = require('./" + action + "')\n"
@@ -163,6 +204,8 @@ exports.listJSONFiles = function(dir,cb) {
 exports.findFiles = function (dir, cb) {
   fs.readdir(dir, function (er, files) {
     // FIXME: handle errors
+    //console.log("Finding files in " + dir)
+    //console.log(files)
     cb(er,files)
   })
 }

@@ -13,8 +13,8 @@ test('initialize app', function(t) {
 
   var expectedFiles = ['package.json','app.js']
   var expectedFolders = [
-    'controller',
-    'model',
+    'controllers',
+    'models',
     'views',
     'public/javascripts',
     'public/stylesheets',
