@@ -1,38 +1,59 @@
 /**
- * Given a view directory and an output directory
- * Mash our meta-view format into something stupid EJS can fucking handle because EJS is dumb
- * There is probably some much smarter templating language I could be using.
+ * Takes the meta-templates in ./makomi/views and translates them into
+ * a format our engine understands; in this case that's handlebars.
+ * This is just one way to do it. A different view engine could try reading
+ * the layouts in the controllers and pre-generating the whole thing.
+ * Or you could write your own templating engine that understands makomi-*
+ * tags natively, so then the whole operation becomes a file copy. Whatever.
  */
 
-// TODO: this
-exports.generate = function() {
-  // get the controllers
-  // find all the "root" views
-  // generate full templates for each one
-  // write to disk
+var fs = require('fs-extra');
+var htmlparser = require('htmlparser');
+var util = require('util');
+var splicer = require('array-splice')
+
+/**
+ * Read all the template files and translate each one
+ */
+exports.generate = function(templateDir,outputDir,cb) {
+  // TODO: finish him. (Fatality!)
 }
 
 /**
- * Given a template file, parses it and expands any parents and children
- * Continues recursively, then replies with a finished template.
- * So our views are DRY, but the generated templates are totally flat.
- * If your templating language is smarter than EJS, you don't have to generate
- * flat views. In fact, feel free to generate a templating language that
- * understands MEJS natively, and then this whole step can just be a file copy.
+ * Given a template file, parses it and translates it into the handlebars
+ * equivalent. Will recursively parse includes.
+ * @param templateFile  Full path to the template
+ * @param cb            Called when done
  */
-exports.parseFile = function(filename,cb) {
+exports.createView = function(templateRoot,templatePath,cb) {
 
-  var htmlparser = require("htmlparser");
-  var fs = require('fs');
+  exports.parseFile(templateRoot,templatePath,function(er,translatedDom) {
+    //console.log("Parsed " + templatePath + " to ")
+    //console.log(util.inspect(translatedDom,{depth:null}))
+    exports.toHtml(translatedDom,function(er,html) {
+      // TODO: error handling
+      cb(er,html)
+    })
+  })
 
-  console.log("Expanding " + filename)
+}
 
-  fs.readFile(filename,function(er,rawHtml) {
-    // this is the callback when the parsing is done
+/**
+ * Parses template file into a data structure and performs translation on it.
+ * Returns the DOM structure of the result, for further manipulation
+ * @param filename
+ * @param cb
+ */
+exports.parseFile = function(templateRoot,templatePath,cb) {
+
+  var filename = templateRoot + templatePath + '.html'
+
+  fs.readFile(filename,'utf-8',function(er,rawHtml) {
+
+    // get HTMLparser to do the heavy lifting
     var handler = new htmlparser.DefaultHandler(function (er, dom) {
-      console.log("Before:")
-      console.log(dom);
-      exports.translateDom(handler.dom,function(translated,payloads) {
+      // translate our elements
+      exports.translateDom(templateRoot,handler.dom,function(translated,payloads) {
         // payloads should be null at this level
         // FIXME: no error handling yet
         cb(er,translated)
@@ -45,59 +66,6 @@ exports.parseFile = function(filename,cb) {
 }
 
 /**
- * Look at every tag to see if it's a matching yieldpoint
- * If so replace it with the payload
- * Return the dom.
- * Recurse into any children.
- * FIXME: would yield multiple times for the same name. Good or bad?
- * @param dom
- * @param yieldpoint
- * @param payload
- */
-exports.recursiveYield = function(dom,yieldpoint,payload,cb) {
-
-  require('array-splice')
-  var toHandle = dom.length;
-  var handled = function() {
-    toHandle--
-    if (toHandle == 0) {
-      cb(dom);
-    }
-  }
-
-  dom.forEach(function(element,index) {
-    // depth first
-    if(element.children) {
-      toHandle++
-      exports.recursiveYield(element.children,yieldpoint,payload,function(returnedDom) {
-        element.children = returnedDom
-        handled()
-      })
-    }
-    // now handle the tag itself
-    if(element.type == 'tag' && element.name == 'yield') {
-      // labelled
-      if (element.attribs && element.attribs.name) {
-        if (element.attribs.name == yieldpoint) {
-          console.log("Replaced yield " + yieldpoint + " with payload")
-          dom.usefulSplice(index,1,payload.children)
-        }
-      } else {
-        // unlabelled
-        if ( (!element.attribs || !element.attribs.name) && yieldpoint == '_unlabelled_') {
-          console.log("Replaced unlabelled yield with payload ")
-          dom.usefulSplice(index,1,payload.children)
-          console.log(dom)
-        }
-      }
-      // no other substitution cases
-    }
-    handled()
-  })
-}
-
-
-/**
  * Reads every sibling element at the current level of the dom
  * Transforms them as necessary
  * Recurses down into any children
@@ -105,107 +73,181 @@ exports.recursiveYield = function(dom,yieldpoint,payload,cb) {
  * @param dom
  * @param cb
  */
-exports.translateDom = function(dom,cb) {
-  var htmlparser = require('htmlparser')
-  // the translated dom
-  var translated = []
-  // content extracted from this level to be passed to yiel
+exports.translateDom = function(templateRoot,dom,cb) {
+
+  //console.log("Translating DOM tree of:")
+  //console.log(util.inspect(dom,{depth:null}));
+
+  // anything that needs to be passed back from children and dealt with at this level
   var payloads = {}
 
   // counter+callback idiom
-  var handled = dom.length
-  var isHandled = function() {
-    handled--;
-    if (handled == 0) {
-      cb(translated,payloads)
+  var count = dom.length
+  var complete = function() {
+    count--;
+    if (count == 0) {
+      cb(dom,payloads)
     }
   }
 
   dom.forEach(function(element,index) {
-    switch(element.type) {
-      case "comment":
-        element.raw = "COMMENT:" + element.raw
-        translated.push(element)
-        isHandled()
-        break;
-      case "tag":
-        // handle children. Can I really do this out of sync without going crazy?
-        if (element.children) {
-          handled++
-          exports.translateDom(element.children,function(translated,arrivingPayloads) {
-            // merge arriving payloads into our current payload stack
-            for(var p in arrivingPayloads) {
-              payloads[p] = arrivingPayloads[p]
-            }
-            element.children = translated
-            isHandled()
-          })
+    // handle elements based on type
+    if (domHandlers[element.type]) {
+
+      domHandlers[element.type](templateRoot,element,index,function(translated,arrivingPayloads) {
+
+        // replace the element with 0 or more translated elements
+        splicer.splice(dom,index,1,translated);
+
+        // add any payloads
+        if (arrivingPayloads) {
+          for(var p in arrivingPayloads) {
+            payloads[p] = arrivingPayloads[p]
+          }
         }
-        var parseRoot = "./test/data/testapp/views/"
-        // decide what to do with the element itself
-        switch(element.name) {
-          case "parent":
-            // load and render the parent
-            exports.parseFile(parseRoot + element.attribs.src,function(er,parentDom) {
-              // find the yield point, add children of parent to that yield point
-              var yieldpoints = htmlparser.DomUtils.getElementsByTagName('yield',parentDom)
-              // FIXME: do something much smarter to find the matching yieldpoints
-              for(var p in payloads) {
-                exports.recursiveYield(parentDom,p,payloads[p],function(modifiedDom) {
-                  parentDom = modifiedDom
-                })
-              }
-              translated = translated.concat(parentDom)
-              isHandled()
-            })
-            break;
-          case "child":
-            // FIXME: parseRoot should be relative to the first file passed in
-            // TODO: verify attribs.src exists
-            exports.parseFile(parseRoot+element.attribs.src,function(er,childDom) {
-              translated = translated.concat(childDom)
-              isHandled()
-            })
-            break;
-          case "payload":
-            /*
-             Baby, I can see your payload
-             You know you're my saving grace
-             You're everything I need and more
-             It's written all over your face
-             */
-            // if we find a payload, instead of including it at this level,
-            // we push it onto the payloads package to be passed back up the stack
-            if (element.attribs && element.attribs.yield) {
-              payloads[element.attribs.yield] = element
-              console.log("sent payload " + element.attribs.yield + " up the stack")
-            } else {
-              /*
-              TODO: This way handled multiple unlabelled payloads but we're not sure
-              if we're even gonna use this rendering engine so punt for now
-              if(!payloads['_unlabelled']) payloads['_unlabelled'] = [];
-              payloads['_unlabelled'].push(element)
-              */
-              payloads['_unlabelled_'] = element;
-            }
-            isHandled()
-            break;
-          default:
-            // leave unrecognized tags unchanged
-            translated.push(element)
-            console.log("ignored unknown tag " + element.raw)
-            isHandled()
-            break;
-        }
-        break;
-      default:
-        // leave unrecognized element types unchanged
-        translated.push(element)
-        isHandled()
-        break;
+        complete()
+      })
+    } else {
+
+      //console.log("Ignoring unhandled element type " + element.type + " [" + element.data + "]")
+      complete()
     }
   })
 }
+
+var domHandlers = {}
+
+/**
+ * Maybe we'll strip comments of some kinds later?
+ * @param element
+ * @param index
+ * @param cb
+ */
+domHandlers.comment = function(templateRoot,element,index,cb) {
+  element.raw = "COMMENT:" + element.raw
+  cb(element,null)
+}
+
+/**
+ * Most things are tags. Tags can have children!
+ * @param element
+ * @param index
+ * @param cb
+ */
+domHandlers.tag = function(templateRoot,element,index,cb) {
+
+  var translated = null;
+  var payloads = null;
+
+  // how to handle the element itself, based on the tag name
+  var handleTag = function() {
+    if (domHandlers.tagHandlers[element.name]) {
+      domHandlers.tagHandlers[element.name](templateRoot,element,function(tagTranslated) {
+        translated = tagTranslated
+        cb(translated,payloads)
+      })
+    } else {
+      // we return unknown tags unchanged (cb expects an array)
+      //console.log("Ignoring unhandled tag " + element.name)
+      translated = [element]
+      cb(translated,payloads)
+    }
+
+  }
+
+  // handle children recursively. Can I really do this out of sync without going crazy?
+  if (element.children) {
+    exports.translateDom(templateRoot,element.children,function(childTranslated,childPayloads) {
+
+      // replace children with their translated equivalents
+      element.children = childTranslated
+
+      // merge arriving payloads into our current payload stack
+      if(childPayloads) {
+        for(var p in childPayloads) {
+          payloads[p] = childPayloads[p]
+        }
+      }
+
+      // now deal with the tag itself
+      handleTag()
+    })
+  } else {
+    // if no kids, handle tag immediately
+    handleTag()
+  }
+
+
+}
+
+/**
+ * Because a tag can expand into a whole dom tree in some cases, the output
+ * of a tag handler is expected to be an array, even if it's just one element.
+ * @type {{}}
+ */
+domHandlers.tagHandlers = {}
+
+/**
+ * Reads an entirely separate template and inserts it into the DOM
+ * Includes can accept parameters that modify what they look like,
+ * so every inclusion is a modified copy of the included code.
+ * @param templateRoot
+ * @param element
+ * @param cb
+ */
+domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,cb) {
+  if(element.attribs && element.attribs['src']) {
+    exports.parseFile(templateRoot,element.attribs['src'],function(er,childDom) {
+      cb(childDom)
+    })
+
+  } else {
+    console.log("Missing src attribute on <makomi-include>; deleting")
+    cb([])
+  }
+}
+
+/**
+ * Replace meta-vars with a handlebars {{variable}}
+ * @param templateRoot
+ * @param element
+ * @param cb
+ */
+domHandlers.tagHandlers['makomi-var'] = function(templateRoot,element,cb) {
+  if(element.attribs && element.attribs['name']) {
+    var varText = "{{" + element.attribs.name + "}}"
+    cb([{
+      raw: varText,
+      data: varText,
+      type: "text"
+    }])
+  } else {
+    console.log("Missing name attribute on <makomi-var>; deleting")
+    cb([])
+  }
+}
+
+/**
+ * Replace targets with handlebars {{{target}}}
+ * Triple-staches are not escaped, so they can contain markup.
+ * @param templateRoot
+ * @param element
+ * @param cb
+ */
+domHandlers.tagHandlers['makomi-target'] = function(templateRoot,element,cb) {
+  if(element.attribs && element.attribs['name']) {
+    var targetText = "{{{" + element.attribs.name + "}}}"
+    cb([{
+      raw: targetText,
+      data: targetText,
+      type: "text"
+    }])
+  } else {
+    console.log("Missing name attribute on <makome-target>; deleting")
+    cb([])
+  }
+}
+
 
 /**
  * Take our formatted dom structure and output actual HTML
@@ -216,27 +258,28 @@ exports.translateDom = function(dom,cb) {
 exports.toHtml = function(dom,cb,depth) {
   if (!depth) depth = 0;
 
+  var er = null; // TODO: error handling
+  var output = "";
+
   // counter+callback idiom
-  var handled = dom.length
-  var isHandled = function() {
-    handled--;
-    if (handled == 0) {
-      cb(output)
+  var count = dom.length
+  var complete = function() {
+    count--;
+    if (count == 0) {
+      cb(er,output)
     }
   }
-
-  var output = "";
 
   // FIXME: I think this only works because everything in it is synchronous
   dom.forEach(function(element,index) {
     switch(element.type) {
       case "comment":
         output += "<!-- " + element.raw + " -->"
-        isHandled()
+        complete()
         break;
       case "directive":
         output += "<!" + element.raw + ">"
-        isHandled();
+        complete();
         break;
       case "tag":
         output += "<" + element.raw + ">"
@@ -246,21 +289,19 @@ exports.toHtml = function(dom,cb,depth) {
           }
         }
         if (element.children) {
-          handled++
-          exports.toHtml(element.children,function(html) {
+          exports.toHtml(element.children,function(er,html) {
             output += html
             endTag()
-            isHandled()
+            complete()
           },depth+2)
-          isHandled()
         } else {
           endTag()
-          isHandled()
+          complete()
         }
         break;
       default:
         output += element.raw
-        isHandled()
+        complete()
         break;
     }
   })
