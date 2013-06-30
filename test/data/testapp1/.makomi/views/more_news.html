@@ -1,0 +1,12 @@
+<makomi-each var="recent_news">
+  <li>
+    <h3><makomi-var name="this.title"></makomi-var></h3>
+    <p><makomi-var name="this.description"></makomi-var></p>
+  </li>
+  <makomi-each-first></makomi-each-first>
+  <makomi-each-last></makomi-each-last>
+  <makomi-each-empty>
+    <p class="empty">No news is, in this case, bad news.</p>
+  </makomi-each-empty>
+</makomi-each>
+<div id="stub-news-more" data-source="/more-news/page/{{page}}"></div>

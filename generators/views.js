@@ -15,8 +15,59 @@ var splicer = require('array-splice')
 /**
  * Read all the template files and translate each one
  */
-exports.generate = function(templateDir,outputDir,cb) {
-  // TODO: finish him. (Fatality!)
+exports.generate = function(templateRoot,outputDir,cb) {
+
+  var recursiveGenerate = function(templatePath,cb) {
+
+    var fullTemplatePath = templateRoot+templatePath
+    fs.readdir(fullTemplatePath,function(er,files) {
+
+      // FIXME: as usual, ignores what happens if there are no files...
+      var count = files.length;
+      var complete = function() {
+        count--
+        if (count==0) cb()
+      }
+
+      files.forEach(function(file) {
+        fs.stat(fullTemplatePath+file,function(er,stats) {
+          if(stats.isDirectory()) {
+            recursiveGenerate(templatePath+file+'/',function() {
+              complete()
+            });
+          } else {
+            // must be an HTML file
+            var fileParts = file.split('.');
+            if (fileParts.pop() == 'html') {
+              var outFileName = fileParts.join('.');
+              exports.createView(templateRoot,templatePath+outFileName,function(er,html) {
+                fs.mkdirs(outputDir+templatePath,function() {
+                  fs.writeFile(
+                    outputDir+templatePath+outFileName+'.hbs',
+                    html,
+                    null,
+                    function(er) {
+                      if (er) console.log("Error writing file to " + outputDir+templatePath+outFileName+'.hbs')
+                      complete()
+                    }
+                  )
+                })
+              })
+            } else {
+              console.log("Ignored non-template file " + file)
+              complete();
+            }
+          }
+        })
+      })
+    })
+
+  }
+
+  recursiveGenerate('',function() {
+    cb()
+  })
+
 }
 
 /**

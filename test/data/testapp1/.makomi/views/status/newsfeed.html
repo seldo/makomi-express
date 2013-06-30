@@ -1,0 +1,14 @@
+<ul>
+  <makomi-each var="recent_news">
+    <li>
+      <h3><makomi-var name="this.title"></makomi-var></h3>
+      <p><makomi-var name="this.description"></makomi-var></p>
+    </li>
+    <makomi-each-first></makomi-each-first>
+    <makomi-each-last></makomi-each-last>
+    <makomi-each-empty>
+      <p>No news is, on this occasion, bad news.
+    </makomi-each-empty>
+  </makomi-each>
+</ul>
+<makomi-target name="bottombox"></makomi-target>
