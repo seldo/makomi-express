@@ -1,6 +1,6 @@
 var mkSrc = require('makomi-source-util'),
     mkRun = require('makomi-express-runtime'),
-    util = require('./util.js'),
+    util = require('./../util.js'),
     fs = require('fs-extra'),
     _ = require('underscore');
 

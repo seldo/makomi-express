@@ -3,12 +3,12 @@
  * @type {*}
  */
 var test = require('tape');
-var initializer = require('../../initializer.js');
+var initializer = require('../../generators/initializer.js');
 var fs = require('fs-extra');
 
 test('initialize app', function(t) {
 
-  var sourceDir = "./test/data/testapp1/"
+  var sourceDir = "./test/data/testapp1/.makomi/"
   var outputDir = "/tmp/initializer/"
 
   var expectedFiles = ['package.json','app.js']

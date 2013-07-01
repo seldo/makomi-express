@@ -1,48 +1,72 @@
-var fs = require('fs')
-var router = require('./generators/router');
-var controller = require('./generators/controllers')
-var view = require('./generators/views')
+var fs = require('fs-extra'),
+  util = require('util'),
+  _ = require('underscore');
 
 exports.name = "makomi-express" // FIXME: almost certainly possible to do introspection here, right?
 
-// export only the methods we really want to be public
-
-// generates basic package structure
-exports.initialize = require('./initializer.js').initialize
+// we allow access to top-level generator functions only
+exports.generators = {
+  base: {
+    path: '',
+    generate: require('./generators/initializer').initialize
+  },
+  router: {
+    path: '',
+    generate: require('./generators/router').generate
+  },
+  views: {
+    path: 'views/',
+    generate: require('./generators/views').generate
+  },
+  controllers: {
+    path: 'controllers/',
+    generate: require('./generators/controllers').generate
+  }
+}
 
 // generate the things that change a lot: routes, controllers, views, models
-exports.generate = function (sourceDir,outputDir,cb) {
-  // GENERATE ALL THE THINGS
+exports.generate = function (sourceDir,outputDir,toGenerate,cb) {
+
   // TODO: you should be able to substitute your own generator if you don't like the default
   // TODO: no error handling here either. I should do some of that.
 
-  // FIXME: I'm sure this could be more elegant, or at least less dorkily named
-  var thingsToDo = 3;
-  var didAThing = function() {
-    thingsToDo--;
-    if (thingsToDo == 0) cb();
+  var targets = [
+    "base",
+    "router",
+    "views",
+    "controllers"
+    // coming later: models, datasources(?)
+  ]
+
+  // default is "all"
+  if(!toGenerate || toGenerate == 'all') toGenerate = targets
+
+  // strings become arrays
+  if (!util.isArray(toGenerate)) {
+    toGenerate = [toGenerate]
   }
 
-  // these can all operate in parallel, so let 'em
-
-  var routingFile = sourceDir + "routes.json"
-  router.generate(routingFile,outputDir,function(er) {
-    didAThing()
+  // validate targets
+  toGenerate.forEach(function(target) {
+    if(!_.contains(targets,target)) {
+      throw new Error("generate requires a valid target or array of targets; you passed " + toGenerate)
+    }
   })
 
-  var controllerDir = sourceDir + "controllers/"
-  var controllerOutput = outputDir + "controllers/"
-  fs.mkdir(controllerOutput,null,function() {
-    controller.generate(controllerDir,controllerOutput,function(er) {
-      didAThing()
-    })
-  })
+  var count = toGenerate.length
+  var complete = function() {
+    count--
+    if (count == 0) cb();
+  }
 
-  var viewDir = sourceDir + "views/"
-  var viewOutput = outputDir + "views/"
-  fs.mkdir(viewOutput,null,function() {
-    view.generate(viewDir,viewOutput,function(er) {
-      didAThing()
+  // GENERATE ALL THE THINGS
+  toGenerate.forEach(function(target) {
+    var outputPath = outputDir + exports.generators[target].path
+    fs.mkdirs(outputPath,function() {
+      // TODO: still no error handling huh?
+      exports.generators[target].generate(sourceDir,outputPath,function() {
+        complete()
+      })
     })
   })
 

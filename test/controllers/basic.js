@@ -8,7 +8,7 @@ var fs = require('fs-extra');
 
 test('generate basic controller', function(t) {
 
-  var rootDir = "./test/data/testapp1/.makomi/"
+  var rootDir = "./test/data/testapp1/.makomi/controllers/"
   var controller = "basic"
   var outputDir = "/tmp/controllers/"
 

@@ -73,6 +73,7 @@ test('parse all views', function (t) {
   fs.mkdirs(outputDir,null,function() {
     generator.generate(templateRoot,outputDir,function() {
       verifyFiles(t,expectedOutput,outputDir,function() {
+        t.end()
         console.log("All done!")
       })
     })

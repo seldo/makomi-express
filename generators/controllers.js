@@ -1,19 +1,17 @@
 var fs = require('fs-extra');
 var _ = require('underscore');
+var mkSrc = require('makomi-source-util')
 
 /**
  * Given the root of the controllers, find each controller
  * Generate _actions and action files for each controller
- * @param rootDir     source root, i.e. .makomi
+ * @param rootDir     controller source root, i.e. .makomi/controllers
  * @param outputDir   controllers directory of the output app
  * @param cb          called when all files written
  */
 exports.generate = function(rootDir, outputDir, cb) {
 
-  // first find the controller directories in the root
-  var controllersDir = rootDir + 'controllers/'
-  console.log("Looking for controllers in " + controllersDir)
-  exports.findFiles(controllersDir, function(er,controllers) {
+  exports.findFiles(rootDir, function(er,controllers) {
 
     // TODO: filter out things that are not controllers?
 
@@ -40,14 +38,14 @@ exports.generate = function(rootDir, outputDir, cb) {
  * Given a controller directory and output directory
  * Parse each action file and generate action files for each controller
  * Plus an _actions file to glue each controller together
- * @param rootDir     source root, i.e. .makomi
+ * @param rootDir     controller source root, i.e. .makomi/controllers
  * @param controller  name of the controller, e.g. users
  * @param outputDir   controllers directory of the output app
  * @param cb          called when all files written to output
  */
 exports.createController = function(rootDir, controller, outputDir, cb) {
 
-  var controllerDir = rootDir + 'controllers/' + controller + '/'
+  var controllerDir = rootDir + controller + '/'
 
   fs.mkdirs(outputDir+controller,null,function() {
 

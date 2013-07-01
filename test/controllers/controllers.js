@@ -9,7 +9,7 @@ var _ = require('underscore');
 
 test('generate controllers', function (t) {
 
-  var rootDir = "./test/data/testapp1/.makomi/"
+  var rootDir = "./test/data/testapp1/.makomi/controllers/"
   var outputDir = "/tmp/controllers/";
   var expectedFiles = {
     "basic": ["flat"],
