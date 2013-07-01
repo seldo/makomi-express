@@ -1,18 +1,22 @@
-var _ = require('underscore')
+var _ = require('underscore'),
+  fs = require('fs-extra');
 
 /**
  * Given a routing file's location and output location, parse the routes
  * and write a router file to disk
  */
-exports.generate = function(routingFile,outputDir,cb){
-    exports.read(routingFile,function(er,routerString) {
+exports.generate = function(sourceDir,outputDir,cb){
+    exports.read(sourceDir + 'routes.json',function(er,routerString) {
         exports.parse(routerString,function(er,routerObject) {
-            exports.generator(routerObject,function(er,routingFiles) {
-                // FIXME: actually only one file
-                exports.write(routingFiles,outputDir,function(er) {
-                    console.log("Generated router");
-                    cb();
-                })
+            exports.generator(routerObject,function(er,routingFile) {
+              fs.writeFile(
+                outputDir+'router.js',
+                routingFile,
+                null,
+                function() {
+                  cb();
+                }
+              );
             })
         })
     })
@@ -50,69 +54,29 @@ exports.parse = function(routerString,cb) {
  * @param cb
  */
 exports.generator = function(routerObject,cb) {
-    var output =
-        "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
-        "// The droid you're looking for is .makomi/routes.json\n\n" +
-        "module.exports = function(app){\n";
+  var output = "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
+    "// The droid you're looking for is .makomi/routes.json\n\n" +
+    "module.exports = function(app){\n";
 
-    // map all the routes and build a list of active controllers
-    var controllers = [];
-    var routes = _.map(routerObject,function(route,path,list) {
-      controllers.push(route.controller)
-      return "app.get('" + path + "', " + route.controller + "." + route.action + ");"
-    });
+  // map all the routes and build a list of active controllers
+  var controllers = [];
+  var routes = _.map(routerObject,function(route,path,list) {
+    controllers.push(route.controller)
+    return "app.get('" + path + "', " + route.controller + "." + route.action + ");"
+  });
 
-    // de-dupe the controllers
-    var uniqueControllers = _.uniq(controllers);
+  // de-dupe the controllers
+  var uniqueControllers = _.uniq(controllers);
 
-    // output the controllers
-    output += "  var " + uniqueControllers.map(function(controller) {
-        return controller + " = require('./controllers/" + controller + "/_actions')"
-    }).join("\n    , ") + ";\n\n"
+  // output the controllers
+  output += "  var " + uniqueControllers.map(function(controller) {
+      return controller + " = require('./controllers/" + controller + "/_actions')"
+  }).join("\n    , ") + ";\n\n"
 
-    // output the routes
-    output += "  " + routes.join("\n  ") + "\n"
+  // output the routes
+  output += "  " + routes.join("\n  ") + "\n"
 
-    output += "}\n"
+  output += "}\n"
 
-    cb(
-        null, // FIXME: catch errors, put 'em here
-        {
-        name: "router.js",
-        body: output
-        }
-    )
-}
-
-/**
- * Given an array of file locations and contents, write them all to disk.
- * We may need some logic here to handle wacky/erroneous output locations/names.
- * FIXME: there's actually only ever one router file, so there's no point to this.
- * @param routingFiles
- * @param outputDir
- * @param cb
- */
-exports.write = function(routingFiles,outputDir,cb) {
-    // handle trivial case
-    if (! (routingFiles instanceof Array)) {
-        routingFiles = [routingFiles]
-    }
-
-    var counter = routingFiles.length;
-    var er = null; // TODO: populate this with any errors
-
-    var fs = require('fs');
-    routingFiles.forEach( function(file){
-        var path = outputDir + file.name
-        fs.writeFile(path, file.body, function(err) {
-            if(err) {
-                console.log(err);
-            } else {
-                console.log("Wrote " + path);
-                // call back when all files are written
-                counter--
-                if (counter == 0) cb(er);
-            }
-        });
-    });
+  cb(null, output)
 }

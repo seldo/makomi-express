@@ -4,7 +4,7 @@
  */
 var test = require('tape');
 var generator = require('../generators/router.js');
-var fs = require('fs');
+var fs = require('fs-extra');
 
 test('generate routing file', function (t) {
 
@@ -18,10 +18,28 @@ test('generate routing file', function (t) {
             generator.generator(routerObject,function(er,routerFile) {
                 // compare to expected output
                 fs.readFile(expectedOutputFile, 'utf-8', function(er,body) {
-                    t.equal(routerFile.body,body)
+                    t.equal(routerFile,body)
                 });
             })
         })
     })
 
 });
+
+test('write routing file to disk', function(t) {
+
+  t.plan(1);
+
+  var sourceDir = "./test/data/testapp1/.makomi/"
+  var outputDir = "/tmp/router/"
+
+  fs.mkdirs(outputDir,function() {
+    generator.generate(sourceDir,outputDir,function() {
+      var routerFile = outputDir+'router.js'
+      fs.exists(routerFile,function(exists) {
+        t.ok(exists,"Routing file written")
+      })
+    })
+  })
+
+})

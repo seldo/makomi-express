@@ -37,14 +37,16 @@ test('parse all views', function (t) {
     var count = 0;
     var complete = function() {
       count--;
-      if (count==0) cb();
+      if (count==0) {
+        cb();
+      }
     }
 
     fs.readdir(path,function(er,files) {
       _.each(expectedFiles,function(value,key,list) {
         if(key == "_root") {
           // verify files at this level
-          count += expectedFiles.length;
+          count += expectedFiles['_root'].length;
           expectedFiles['_root'].forEach(function(file) {
             var fullFile = path+file+'.hbs'
             fs.exists(fullFile,function(exists) {
@@ -60,6 +62,7 @@ test('parse all views', function (t) {
             if(stats.isDirectory()) {
               // recurse
               verifyFiles(t,expectedFiles[key],subDir+'/',function() {
+                t.ok(true,subDir + " verified")
                 complete()
               })
             }
@@ -74,7 +77,6 @@ test('parse all views', function (t) {
     generator.generate(templateRoot,outputDir,function() {
       verifyFiles(t,expectedOutput,outputDir,function() {
         t.end()
-        console.log("All done!")
       })
     })
   })

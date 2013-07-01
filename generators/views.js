@@ -33,6 +33,7 @@ exports.generate = function(templateRoot,outputDir,cb) {
         fs.stat(fullTemplatePath+file,function(er,stats) {
           if(stats.isDirectory()) {
             recursiveGenerate(templatePath+file+'/',function() {
+              //console.log("Finished directory " + file)
               complete()
             });
           } else {
@@ -42,12 +43,14 @@ exports.generate = function(templateRoot,outputDir,cb) {
               var outFileName = fileParts.join('.');
               exports.createView(templateRoot,templatePath+outFileName,function(er,html) {
                 fs.mkdirs(outputDir+templatePath,function() {
+                  var fullOutPath = outputDir+templatePath+outFileName+'.hbs'
                   fs.writeFile(
-                    outputDir+templatePath+outFileName+'.hbs',
+                    fullOutPath,
                     html,
                     null,
                     function(er) {
-                      if (er) console.log("Error writing file to " + outputDir+templatePath+outFileName+'.hbs')
+                      if (er) console.log("Error writing file to " + fullOutPath)
+                      //console.log("Wrote file " + fullOutPath)
                       complete()
                     }
                   )
