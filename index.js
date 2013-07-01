@@ -61,11 +61,12 @@ exports.generate = function (sourceDir,outputDir,toGenerate,cb) {
 
   // GENERATE ALL THE THINGS
   toGenerate.forEach(function(target) {
+    var sourcePath = sourceDir + exports.generators[target].path
     var outputPath = outputDir + exports.generators[target].path
     fs.mkdirs(outputPath,function() {
       // TODO: still no error handling huh?
-      console.log("Calling " + target + " with source " + sourceDir + " and output " + outputPath)
-      exports.generators[target].generate(sourceDir,outputPath,function() {
+      console.log("Calling " + target + " with source " + sourcePath + " and output " + outputPath)
+      exports.generators[target].generate(sourcePath,outputPath,function() {
         complete()
       })
     })
