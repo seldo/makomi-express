@@ -9,6 +9,7 @@
     "htmlparser": "*",
     "express-mock-request": "*",
     "fs-extra": "*",
-    "underscore": "*"
+    "underscore": "*",
+    "array-splice": "*"
   }
 }

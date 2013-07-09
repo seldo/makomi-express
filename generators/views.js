@@ -337,6 +337,7 @@ exports.toHtml = function(dom,cb,depth) {
         break;
       case "tag":
         output += "<" + element.raw + ">"
+        // FIXME: this is from when we were using EJS; can probably remove
         var endTag = function() {
           if (element.name != '%=') {
             output += "</" + element.name + ">"
