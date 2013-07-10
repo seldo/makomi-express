@@ -1,32 +1,44 @@
+var mkSrc = require('makomi-source-util')
+var mkRun = require('makomi-express-runtime')
+
 /**
- * Render the given route
+ * Render the given route into an edit-ready form.
  * @param route     The route
  * @param method    HTTP method
  * @param params    Parameters passed to the route
  * @param data      Data source(s) to override default data source(s) for the route
  */
-exports.render = function(appLocation,route,method,params,data,cb){
+exports.render = function (sourceDir, appLocation, route, method, params, data, cb) {
 
-    /**
-     * So because makomi-express renders express, this is super-easy,
-     * because we can do everything in JS. But if your framework was
-     * another language, you could call out to it here as long as
-     * you captured the output and returned it per spec.
-     */
+  // select controller based on route
+  // TODO: differentiate between GET and POST etc.
+  mkSrc.loadRoutes(sourceDir,function(routes) {
+    var controllerName = routes[route].controller
+    var actionName = routes[route].action
+    mkSrc.loadController(sourceDir,controllerName,actionName,function(controller) {
+      /**
+       * Because we want to hijack so much of the request and response,
+       * this essentially re-creates the controller.
+       * FIXME: this will become trickier when people customize controllers.
+       */
+      console.log(controller)
 
-    // get our mock requester
-    var request = require('express-mock-request');
+      // TODO: will need to load data and shit
 
-    // include the actual app, which is written to allow this to work
-    // FIXME: will this change correctly when files are modified?
-    var app = require(appLocation + "app.js");
-
-    // TODO: select method
-    // TODO: provide params to request
-    // TODO: use data if supplied to substitute for existing data sources
-
-    request(app).get(route).expect(function(response) {
-        cb(response);
-    });
+      mkRun.compile(
+        controller.layout,
+        function(rendered) {
+          cb({
+            statusCode: 200,
+            headers: {
+              'content-type': "text/html"
+            },
+            body: rendered
+          })
+        },
+        appLocation+'/views/'
+      )
+    })
+  })
 
 }
