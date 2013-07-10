@@ -101,7 +101,7 @@ exports.createAppJS = function(definition) {
 
   out += "// configure express\n"
   var sets = {
-    "port":"process.env.PORT || 3000",
+    "port":"process.env.PORT || 3001",
     "views":"__dirname + '/views'",
     "view engine":"'hbs'"
   }

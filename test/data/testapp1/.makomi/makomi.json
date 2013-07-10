@@ -2,6 +2,7 @@
   "name": "test-app-1",
   "version": "0.0.1",
   "generators": {
+    "base": "makomi-express",
     "router": "makomi-express",
     "controllers": "makomi-express",
     "views": "makomi-express"
