@@ -21,7 +21,7 @@ exports.render = function (sourceDir, appLocation, route, method, params, data, 
        * this essentially re-creates the controller.
        * FIXME: this will become trickier when people customize controllers.
        */
-      console.log(controller)
+      //console.log(controller)
 
       // TODO: will need to load data and shit
 
@@ -36,7 +36,7 @@ exports.render = function (sourceDir, appLocation, route, method, params, data, 
             body: rendered
           })
         },
-        appLocation+'/views/'
+        appLocation+'views/'
       )
     })
   })
