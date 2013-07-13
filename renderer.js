@@ -33,7 +33,8 @@ exports.render = function (sourceDir, appLocation, route, method, params, data, 
             headers: {
               'content-type': "text/html"
             },
-            body: rendered
+            body: rendered,
+            controller: controller
           })
         },
         appLocation+'views/'

@@ -65,7 +65,7 @@ exports.generate = function (sourceDir,outputDir,toGenerate,cb) {
     var outputPath = outputDir + exports.generators[target].path
     fs.mkdirs(outputPath,function() {
       // TODO: still no error handling huh?
-      console.log("Calling " + target + " with source " + sourcePath + " and output " + outputPath)
+      //console.log("Calling " + target + " with source " + sourcePath + " and output " + outputPath)
       exports.generators[target].generate(sourcePath,outputPath,function() {
         complete()
       })
