@@ -25,7 +25,7 @@ exports.generators = {
 }
 
 // generate the things that change a lot: routes, controllers, views, models
-exports.generate = function (sourceDir,outputDir,toGenerate,cb) {
+exports.generate = function (sourceDir,outputDir,toGenerate,devMode,cb) {
 
   // TODO: you should be able to substitute your own generator if you don't like the default
   // TODO: no error handling here either. I should do some of that.
@@ -66,7 +66,7 @@ exports.generate = function (sourceDir,outputDir,toGenerate,cb) {
     fs.mkdirs(outputPath,function() {
       // TODO: still no error handling huh?
       //console.log("Calling " + target + " with source " + sourcePath + " and output " + outputPath)
-      exports.generators[target].generate(sourcePath,outputPath,function() {
+      exports.generators[target].generate(sourcePath,outputPath,devMode,function() {
         complete()
       })
     })

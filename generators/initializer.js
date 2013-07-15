@@ -7,7 +7,7 @@ var mkSrc = require('makomi-source-util'),
 /**
  * Create a new app skeleton, e.g. npm install express or whatever
  */
-exports.initialize = function(sourceDir,outputDir,cb){
+exports.initialize = function(sourceDir,outputDir,devMode,cb){
 
   var tasks = 2;
   var complete = function() {

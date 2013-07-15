@@ -9,7 +9,7 @@ var mkSrc = require('makomi-source-util')
  * @param outputDir   controllers directory of the output app
  * @param cb          called when all files written
  */
-exports.generate = function(rootDir, outputDir, cb) {
+exports.generate = function(rootDir, outputDir, devMode, cb) {
 
   exports.findFiles(rootDir, function(er,controllers) {
 

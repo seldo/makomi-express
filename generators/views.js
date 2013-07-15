@@ -5,6 +5,11 @@
  * the layouts in the controllers and pre-generating the whole thing.
  * Or you could write your own templating engine that understands makomi-*
  * tags natively, so then the whole operation becomes a file copy. Whatever.
+ *
+ * The only caveat is that if "devMode" is true you need to ensure your
+ * output contains placeholder comments for makomi-id-containing elements
+ * that you have replaced, so that the editor can find them and map them
+ * back to the original source.
  */
 
 var fs = require('fs-extra');
@@ -15,7 +20,7 @@ var splicer = require('array-splice')
 /**
  * Read all the template files and translate each one
  */
-exports.generate = function(templateRoot,outputDir,cb) {
+exports.generate = function(templateRoot,outputDir,devMode,cb) {
 
   var recursiveGenerate = function(templatePath,cb) {
 
@@ -41,7 +46,7 @@ exports.generate = function(templateRoot,outputDir,cb) {
             var fileParts = file.split('.');
             if (fileParts.pop() == 'html') {
               var outFileName = fileParts.join('.');
-              exports.createView(templateRoot,templatePath+outFileName,function(er,html) {
+              exports.createView(templateRoot,templatePath+outFileName,devMode,function(er,html) {
                 fs.mkdirs(outputDir+templatePath,function() {
                   var fullOutPath = outputDir+templatePath+outFileName+'.hbs'
                   fs.writeFile(
@@ -79,9 +84,9 @@ exports.generate = function(templateRoot,outputDir,cb) {
  * @param templateFile  Full path to the template
  * @param cb            Called when done
  */
-exports.createView = function(templateRoot,templatePath,cb) {
+exports.createView = function(templateRoot,templatePath,devMode,cb) {
 
-  exports.parseFile(templateRoot,templatePath,function(er,translatedDom) {
+  exports.parseFile(templateRoot,templatePath,devMode,function(er,translatedDom) {
     //console.log("Parsed " + templatePath + " to ")
     //console.log(util.inspect(translatedDom,{depth:null}))
     exports.toHtml(translatedDom,function(er,html) {
@@ -98,7 +103,7 @@ exports.createView = function(templateRoot,templatePath,cb) {
  * @param filename
  * @param cb
  */
-exports.parseFile = function(templateRoot,templatePath,cb) {
+exports.parseFile = function(templateRoot,templatePath,devMode,cb) {
 
   var filename = templateRoot + templatePath + '.html'
 
@@ -107,7 +112,7 @@ exports.parseFile = function(templateRoot,templatePath,cb) {
     // get HTMLparser to do the heavy lifting
     var handler = new htmlparser.DefaultHandler(function (er, dom) {
       // translate our elements
-      exports.translateDom(templateRoot,handler.dom,function(translated,payloads) {
+      exports.translateDom(templateRoot,handler.dom,devMode,function(translated,payloads) {
         // payloads should be null at this level
         // FIXME: no error handling yet
         cb(er,translated)
@@ -127,7 +132,7 @@ exports.parseFile = function(templateRoot,templatePath,cb) {
  * @param dom
  * @param cb
  */
-exports.translateDom = function(templateRoot,dom,cb) {
+exports.translateDom = function(templateRoot,dom,devMode,cb) {
 
   //console.log("Translating DOM tree of:")
   //console.log(util.inspect(dom,{depth:null}));
@@ -148,7 +153,7 @@ exports.translateDom = function(templateRoot,dom,cb) {
     // handle elements based on type
     if (domHandlers[element.type]) {
 
-      domHandlers[element.type](templateRoot,element,index,function(translated,arrivingPayloads) {
+      domHandlers[element.type](templateRoot,element,index,devMode,function(translated,arrivingPayloads) {
 
         // replace the element with 0 or more translated elements
         splicer.splice(dom,index,1,translated);
@@ -177,7 +182,7 @@ var domHandlers = {}
  * @param index
  * @param cb
  */
-domHandlers.comment = function(templateRoot,element,index,cb) {
+domHandlers.comment = function(templateRoot,element,index,devMode,cb) {
   element.raw = "COMMENT:" + element.raw
   cb(element,null)
 }
@@ -188,7 +193,7 @@ domHandlers.comment = function(templateRoot,element,index,cb) {
  * @param index
  * @param cb
  */
-domHandlers.tag = function(templateRoot,element,index,cb) {
+domHandlers.tag = function(templateRoot,element,index,devMode,cb) {
 
   var translated = null;
   var payloads = null;
@@ -196,7 +201,7 @@ domHandlers.tag = function(templateRoot,element,index,cb) {
   // how to handle the element itself, based on the tag name
   var handleTag = function() {
     if (domHandlers.tagHandlers[element.name]) {
-      domHandlers.tagHandlers[element.name](templateRoot,element,function(tagTranslated) {
+      domHandlers.tagHandlers[element.name](templateRoot,element,devMode,function(tagTranslated) {
         translated = tagTranslated
         cb(translated,payloads)
       })
@@ -211,7 +216,7 @@ domHandlers.tag = function(templateRoot,element,index,cb) {
 
   // handle children recursively. Can I really do this out of sync without going crazy?
   if (element.children) {
-    exports.translateDom(templateRoot,element.children,function(childTranslated,childPayloads) {
+    exports.translateDom(templateRoot,element.children,devMode,function(childTranslated,childPayloads) {
 
       // replace children with their translated equivalents
       element.children = childTranslated
@@ -249,15 +254,25 @@ domHandlers.tagHandlers = {}
  * @param element
  * @param cb
  */
-domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,cb) {
+domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,devMode,cb) {
+  var placeHolder = {
+    type: "makomiplaceholder",
+    name: "makomi-include",
+    "makomi-id": element.attribs['makomi-id']
+  }
   if(element.attribs && element.attribs['src']) {
-    exports.parseFile(templateRoot,element.attribs['src'],function(er,childDom) {
+    exports.parseFile(templateRoot,element.attribs['src'],devMode,function(er,childDom) {
+      if (devMode) childDom.unshift(placeHolder)
       cb(childDom)
     })
 
   } else {
-    console.log("Missing src attribute on <makomi-include>; deleting")
-    cb([])
+    console.log("Missing src attribute on <makomi-include>; ignoring")
+    if (devMode) {
+      cb([placeHolder])
+    } else {
+      cb([])
+    }
   }
 }
 
@@ -267,7 +282,7 @@ domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,cb) {
  * @param element
  * @param cb
  */
-domHandlers.tagHandlers['makomi-var'] = function(templateRoot,element,cb) {
+domHandlers.tagHandlers['makomi-var'] = function(templateRoot,element,devMode,cb) {
   if(element.attribs && element.attribs['name']) {
     var varText = "{{" + element.attribs.name + "}}"
     cb([{
@@ -288,7 +303,7 @@ domHandlers.tagHandlers['makomi-var'] = function(templateRoot,element,cb) {
  * @param element
  * @param cb
  */
-domHandlers.tagHandlers['makomi-target'] = function(templateRoot,element,cb) {
+domHandlers.tagHandlers['makomi-target'] = function(templateRoot,element,devMode,cb) {
   if(element.attribs && element.attribs['name']) {
     var targetText = "{{{" + element.attribs.name + "}}}"
     cb([{
@@ -333,6 +348,12 @@ exports.toHtml = function(dom,cb,depth) {
         break;
       case "directive":
         output += "<!" + element.raw + ">"
+        complete();
+        break;
+      case "makomiplaceholder":
+        console.log("Outputting placeholder:")
+        console.log(element)
+        output += '<!-- ' + element.name + ' makomi-id=' + element['makomi-id'] + ' -->'
         complete();
         break;
       case "tag":

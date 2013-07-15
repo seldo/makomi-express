@@ -5,7 +5,7 @@ var _ = require('underscore'),
  * Given a routing file's location and output location, parse the routes
  * and write a router file to disk
  */
-exports.generate = function(sourceDir,outputDir,cb){
+exports.generate = function(sourceDir,outputDir,devMode,cb){
     exports.read(sourceDir + 'routes.json',function(er,routerString) {
         exports.parse(routerString,function(er,routerObject) {
             exports.generator(routerObject,function(er,routingFile) {
