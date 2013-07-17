@@ -255,21 +255,21 @@ domHandlers.tagHandlers = {}
  * @param cb
  */
 domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,devMode,cb) {
-  var placeHolder = {
-    type: "makomiplaceholder",
-    name: "makomi-include",
-    "makomi-id": element.attribs['makomi-id']
-  }
   if(element.attribs && element.attribs['src']) {
     exports.parseFile(templateRoot,element.attribs['src'],devMode,function(er,childDom) {
-      if (devMode) childDom.unshift(placeHolder)
-      cb(childDom)
+      // if in dev mode, we leave the parent tag in place
+      if (devMode) {
+        element.children = childDom
+        cb([element])
+      } else {
+        cb(childDom)
+      }
     })
 
   } else {
     console.log("Missing src attribute on <makomi-include>; ignoring")
     if (devMode) {
-      cb([placeHolder])
+      cb([element])
     } else {
       cb([])
     }
@@ -285,11 +285,18 @@ domHandlers.tagHandlers['makomi-include'] = function(templateRoot,element,devMod
 domHandlers.tagHandlers['makomi-var'] = function(templateRoot,element,devMode,cb) {
   if(element.attribs && element.attribs['name']) {
     var varText = "{{" + element.attribs.name + "}}"
-    cb([{
+    var varElement = {
       raw: varText,
       data: varText,
       type: "text"
-    }])
+    }
+    if(devMode) {
+      element.children = [varElement]
+      cb([element])
+    } else {
+      cb([varElement])
+    }
+
   } else {
     console.log("Missing name attribute on <makomi-var>; deleting")
     cb([])
