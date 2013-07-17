@@ -14,7 +14,7 @@ test('parse a single template', function (t) {
   var expectedOutputFile = "./test/data/testapp1/expected/views/basic/expected.flat.hbs"
 
   testUtil.compareToExpectedOutput(t,expectedOutputFile,function(callWithOutput) {
-    generator.createView(templateRoot,templatePath,function(er,output) {
+    generator.createView(templateRoot,templatePath,false,function(er,output) {
       callWithOutput(output)
     })
   })

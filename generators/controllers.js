@@ -18,9 +18,9 @@ exports.generate = function(rootDir, outputDir, devMode, cb) {
     // the controllers are independent so we can read them all in parallel,
     // parse them in parallel, and just say when we're done.
     var count = controllers.length
+    if (count == 0) cb()
     var complete = function() {
       count--
-      // TODO: what if no controllers exist?
       if(count == 0) cb()
     }
 

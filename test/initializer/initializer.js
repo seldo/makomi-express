@@ -36,7 +36,7 @@ test('initialize app', function(t) {
   fs.mkdir(outputDir,null,function() {
 
     // initialize testapp1
-    initializer.initialize(sourceDir,outputDir,function() {
+    initializer.initialize(sourceDir,outputDir,false,function() {
 
       // the other tests verify the content of the files
       // here we just verify their existence and relative locations are correct

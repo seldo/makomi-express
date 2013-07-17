@@ -34,7 +34,7 @@ test('generate controllers', function (t) {
   // ensure our output directory exists
   fs.mkdir(outputDir,null,function() {
     // run the generator
-    generator.generate(rootDir,outputDir,function() {
+    generator.generate(rootDir,outputDir,false,function() {
       // count files for each folder
       _.map(expectedFiles,function(controllerFiles,controller,list) {
         controllerFiles.forEach(function(file) {

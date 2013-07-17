@@ -13,7 +13,7 @@ test('generate a full app', function (t) {
   var sourceDir = './test/data/testapp1/.makomi/'
   var outputDir = "/tmp/testapp-generated/"
 
-  mkEx.generate(sourceDir,outputDir,"all",function() {
+  mkEx.generate(sourceDir,outputDir,"all",false,function() {
     console.log("Generated!")
     t.ok(true,"Faked test OK")
   })

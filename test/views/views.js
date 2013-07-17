@@ -74,7 +74,7 @@ test('parse all views', function (t) {
   }
 
   fs.mkdirs(outputDir,null,function() {
-    generator.generate(templateRoot,outputDir,function() {
+    generator.generate(templateRoot,outputDir,false,function() {
       verifyFiles(t,expectedOutput,outputDir,function() {
         t.end()
       })

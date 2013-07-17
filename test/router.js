@@ -34,7 +34,7 @@ test('write routing file to disk', function(t) {
   var outputDir = "/tmp/router/"
 
   fs.mkdirs(outputDir,function() {
-    generator.generate(sourceDir,outputDir,function() {
+    generator.generate(sourceDir,outputDir,false,function() {
       var routerFile = outputDir+'router.js'
       fs.exists(routerFile,function(exists) {
         t.ok(exists,"Routing file written")
