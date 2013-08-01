@@ -163,7 +163,7 @@ exports.createAppJS = function(definition) {
     "    store:  sessionStore,\n" +
     "    parser: connect.cookieParser()\n" +
     "  });\n" +
-    "  mkEx.misc.socketController.start(socketServer)\n"
+    "  mkEx.sockets.start(socketServer,__dirname)\n"
 
   out += "});\n"
 
