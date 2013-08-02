@@ -23,6 +23,7 @@ exports.initialize = function(sourceDir,outputDir,devMode,cb){
   // TODO: if we override the app structure we do it here
   mkSrc.loadDefinition(sourceDir,function(definition) {
 
+    // create the package file
     var packageObject = exports.createPackage(definition);
     util.writeFile(
       JSON.stringify(packageObject,null,2),
@@ -31,6 +32,7 @@ exports.initialize = function(sourceDir,outputDir,devMode,cb){
       complete
     );
 
+    // create app.js
     var appFile = exports.createAppJS(definition);
     util.writeFile(
       appFile,
@@ -39,7 +41,20 @@ exports.initialize = function(sourceDir,outputDir,devMode,cb){
       complete
     )
 
-    var folders = [
+    // copy the contents of public, unmolested
+    var dirsToCopy = [
+      'public'
+    ]
+    tasks += dirsToCopy.length
+    dirsToCopy.forEach(function(dir) {
+      fs.copy(sourceDir+dir,outputDir+dir,function() {
+        complete()
+      })
+    })
+
+
+    // generate any directories not already generated
+    var dirsToCreate = [
       'controllers',
       'models',
       'views',
@@ -47,9 +62,9 @@ exports.initialize = function(sourceDir,outputDir,devMode,cb){
       'public/stylesheets',
       'test'
     ]
-    tasks += folders.length;
-    folders.forEach(function(folder) {
-      fs.mkdirs(outputDir+folder,function(err) {
+    tasks += dirsToCreate.length;
+    dirsToCreate.forEach(function(dir) {
+      fs.mkdirs(outputDir+dir,function(err) {
         if (err) {
           console.log(err)
         }
