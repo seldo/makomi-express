@@ -12,10 +12,11 @@
  * back to the original source.
  */
 
-var fs = require('fs-extra');
-var htmlparser = require('htmlparser');
-var util = require('util');
+var fs = require('fs-extra')
+var htmlparser = require('htmlparser')
+var util = require('util')
 var splicer = require('array-splice')
+var mkSrc = require('makomi-source-util')
 
 /**
  * Read all the template files and translate each one
@@ -324,69 +325,5 @@ domHandlers.tagHandlers['makomi-target'] = function(templateRoot,element,devMode
   }
 }
 
-
-/**
- * Take our formatted dom structure and output actual HTML
- * @param dom
- * @param cb
- * @param depth
- */
-exports.toHtml = function(dom,cb,depth) {
-  if (!depth) depth = 0;
-
-  var er = null; // TODO: error handling
-  var output = "";
-
-  // counter+callback idiom
-  var count = dom.length
-  var complete = function() {
-    count--;
-    if (count == 0) {
-      cb(er,output)
-    }
-  }
-
-  // FIXME: I think this only works because everything in it is synchronous
-  dom.forEach(function(element,index) {
-    switch(element.type) {
-      case "comment":
-        output += "<!-- " + element.raw + " -->"
-        complete()
-        break;
-      case "directive":
-        output += "<!" + element.raw + ">"
-        complete();
-        break;
-      case "makomiplaceholder":
-        console.log("Outputting placeholder:")
-        console.log(element)
-        output += '<!-- ' + element.name + ' makomi-id=' + element['makomi-id'] + ' -->'
-        complete();
-        break;
-      case "tag":
-        output += "<" + element.raw + ">"
-        // FIXME: this is from when we were using EJS; can probably remove
-        var endTag = function() {
-          if (element.name != '%=') {
-            output += "</" + element.name + ">"
-          }
-        }
-        if (element.children) {
-          exports.toHtml(element.children,function(er,html) {
-            output += html
-            endTag()
-            complete()
-          },depth+2)
-        } else {
-          endTag()
-          complete()
-        }
-        break;
-      default:
-        output += element.raw
-        complete()
-        break;
-    }
-  })
-
-}
+// it's the same!
+exports.toHtml = mkSrc.toHtml
