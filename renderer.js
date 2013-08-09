@@ -31,7 +31,7 @@ exports.render = function (sourceDir, appLocation, route, method, params, data, 
           cb({
             statusCode: 200,
             headers: {
-              'content-type': "text/html"
+              'Content-type': "text/html"
             },
             body: rendered,
             controller: controller
