@@ -16,14 +16,15 @@ exports.render = function (sourceDir, appLocation, route, method, params, data, 
     var controllerName = routes[route].controller
     var actionName = routes[route].action
     mkSrc.loadController(sourceDir,controllerName,actionName,function(controller) {
+
+      // TODO: load the models and require() them in, setting the env to makomi-dev
+
       /**
        * Because we want to hijack so much of the request and response,
        * this essentially re-creates the controller.
        * FIXME: this will become trickier when people customize controllers.
        */
       //console.log(controller)
-
-      // TODO: will need to load data and shit
 
       mkRun.compile(
         controller.layout,

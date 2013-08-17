@@ -18,6 +18,10 @@ exports.generators = {
     path: 'views/',
     generate: require('./generators/views').generate
   },
+  models: {
+    path: 'models/',
+    generate: require('./generators/models').generate
+  },
   controllers: {
     path: 'controllers/',
     generate: require('./generators/controllers').generate
@@ -34,8 +38,8 @@ exports.generate = function (sourceDir,outputDir,toGenerate,devMode,cb) {
     "base",
     "router",
     "views",
+    "models",
     "controllers"
-    // coming later: models, datasources(?)
   ]
 
   // default is "all"
