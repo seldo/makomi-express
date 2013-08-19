@@ -11,7 +11,7 @@ var mkSrc = require('makomi-source-util')
  */
 exports.generate = function(rootDir, outputDir, devMode, cb) {
 
-  exports.findFiles(rootDir, function(er,controllers) {
+  mkSrc.files.list(rootDir, function(er,controllers) {
 
     // TODO: filter out things that are not controllers?
 
@@ -49,7 +49,7 @@ exports.createController = function(rootDir, controller, outputDir, cb) {
 
   fs.mkdirs(outputDir+controller,null,function() {
 
-    exports.listJSONFiles(controllerDir, function(actions) {
+    mkSrc.files.listJSON(controllerDir, function(actions) {
 
       var count = actions.length
       var complete = function() {
@@ -60,7 +60,7 @@ exports.createController = function(rootDir, controller, outputDir, cb) {
       // output _actions file
       count++
       exports.createActions(controllerDir,controller,function(body) {
-        exports.write(
+        mkSrc.files.writeToDir(
           outputDir+controller+'/',
           '_actions.js',
           body,
@@ -74,7 +74,7 @@ exports.createController = function(rootDir, controller, outputDir, cb) {
       // output individual actions
       actions.forEach(function(action) {
         exports.createAction(controllerDir,controller,action,function(actionBody) {
-          exports.write(
+          mkSrc.files.writeToDir(
             outputDir+controller+'/',
             action+'.js',
             actionBody,
@@ -176,7 +176,7 @@ exports.createActions = function(controllerDir,controller,cb) {
     "// AUTOMATICALLY GENERATED. DO NOT EDIT.\n" +
     "// This is generated based on the files that exist in .makomi/controllers/" + controller + "\n\n"
 
-  exports.listJSONFiles(controllerDir,function(actions) {
+  mkSrc.files.listJSON(controllerDir,function(actions) {
 
     output += actions.map(function(action) {
       return "exports." + action + " = require('./" + action + "')\n"
@@ -184,88 +184,4 @@ exports.createActions = function(controllerDir,controller,cb) {
 
     cb(output)
   })
-}
-
-/**
- * Find JSON files in a given directory, return as an array of bare names
- * @param dir
- * @param cb
- */
-exports.listJSONFiles = function(dir,cb) {
-  exports.findFiles(dir,function(er,rawFiles) {
-
-    var fileList = []
-
-    // FIXME: doesn't return if there are no files
-    var count = rawFiles.length
-    var complete = function() {
-      count--
-      if (count==0) cb(fileList)
-    }
-
-    rawFiles.forEach(function(file) {
-      // FIXME: no error handling here either
-      var filePart = file.split('.')
-      if(filePart[1] == 'json') fileList.push(filePart[0])
-      complete()
-    })
-
-  })
-}
-
-/**
- * Get a list of all the file names in a directory.
- * @param dir
- * @param cb
- */
-exports.findFiles = function (dir, cb) {
-  fs.readdir(dir, function (er, files) {
-    // FIXME: handle errors
-    //console.log("Finding files in " + dir)
-    //console.log(files)
-    cb(er,files)
-  })
-}
-
-/**
- * Read in the file. Maybe also validate it here in future.
- * @param routingFile
- * @param cb
- */
-exports.read = function (file, cb) {
-  fs.readFile(file, 'utf-8', cb);
-}
-
-/**
- * Trivial to parse because it's JSON. Some validation a good idea in future.
- * @param routerString
- * @param cb
- */
-exports.parse = function (fileString, cb) {
-  var parsed = JSON.parse(fileString);
-  // FIXME: catch errors, send them instead of always null
-  var er = null;
-  cb(er, parsed);
-}
-
-/**
- * Given a file "object", which contains a name and the file body, write that file
- * We are given the output dir for all these.
- * We may need some logic here to handle wacky/erroneous output locations/names.
- * @param fileObject
- * @param outputDir
- * @param cb
- */
-exports.write = function (dir, name, body, cb) {
-
-  var path = dir + name
-  fs.writeFile(path, body, function (er) {
-    if (er) {
-      console.log(er);
-    } else {
-      console.log("Wrote " + path);
-    }
-    cb(er);
-  });
-
 }

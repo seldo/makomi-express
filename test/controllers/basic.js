@@ -19,7 +19,7 @@ test('generate basic controller', function(t) {
   // the content of the files is tested elsewhere
   fs.mkdirs(outputDir,null,function() {
     generator.createController(rootDir,controller,outputDir,function() {
-      generator.findFiles(outputDir+controller,function(er,files){
+      fs.readdir(outputDir+controller, function (er, files) {
         expected.forEach(function(expectedFile) {
           t.notEqual(
             files.indexOf(expectedFile),

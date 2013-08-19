@@ -21,46 +21,7 @@ exports.createQuery = function(model,controller,action,cb) {
 
 // TODO: move these to util, and refactor controllers to use them
 
-/**
- * Find JSON files in a given directory, return as an array of bare names
- * @param dir
- * @param cb
- */
-exports.listJSONFiles = function(dir,cb) {
-  exports.findFiles(dir,function(er,rawFiles) {
 
-    var fileList = []
-
-    // FIXME: doesn't return if there are no files
-    var count = rawFiles.length
-    var complete = function() {
-      count--
-      if (count==0) cb(fileList)
-    }
-
-    rawFiles.forEach(function(file) {
-      // FIXME: no error handling here either
-      var filePart = file.split('.')
-      if(filePart[1] == 'json') fileList.push(filePart[0])
-      complete()
-    })
-
-  })
-}
-
-/**
- * Get a list of all the file names in a directory.
- * @param dir
- * @param cb
- */
-exports.findFiles = function (dir, cb) {
-  fs.readdir(dir, function (er, files) {
-    // FIXME: handle errors
-    //console.log("Finding files in " + dir)
-    //console.log(files)
-    cb(er,files)
-  })
-}
 
 // TODO: replace with readJSONFile, writeJSONFile, etc.
 
