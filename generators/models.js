@@ -38,22 +38,31 @@ exports.generate = function(rootDir, outputDir, devMode, cb) {
 }
 
 /**
- *
+ * Read model format and output a model class.
  * @param rootDir
  * @param model
  * @param outputDir
  * @param cb
  */
 exports.createModel = function(rootDir, modelName, cb) {
+  fs.readJson(rootDir + modelName + '.json',function(er,model) {
+    // TODO: find the adapters required
+    // TODO: foreach query, translate the queries into methods
+    var modelCode = ''
 
-  // TODO: find the adapters required
-  // TODO: foreach query, translate the queries into methods
+    modelCode += _.map(model.queries,function(query) {
+      return exports.createQuery(query)
+    }).join("\n")
 
-  fs.readJSONFile(rootDir + modelName,function(er,model) {
+    cb(modelCode)
   })
 
 }
 
-exports.createQuery = function(model,controller,action,cb) {
-
+/**
+ * Generate a single query class for a model
+ * @param cb
+ */
+exports.createQuery = function(query) {
+  return "// query goes here\n";
 }
