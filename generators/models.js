@@ -13,7 +13,7 @@ var mkSrc = require('makomi-source-util')
 exports.generate = function(rootDir, outputDir, devMode, cb) {
 
   // generate a model class for each model we find
-  mkSrc.files.listJSON(rootDir,function(er,modelNames) {
+  mkSrc.files.listJSON(rootDir,function(modelNames) {
 
     var count = modelNames.length;
     if (modelNames.length == 0) cb()
