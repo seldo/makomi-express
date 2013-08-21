@@ -46,8 +46,8 @@ exports.generate = function(rootDir, outputDir, devMode, cb) {
  */
 exports.createModel = function(rootDir, modelName, cb) {
   fs.readJson(rootDir + modelName + '.json',function(er,model) {
-    // TODO: find the adapters required
-    // TODO: foreach query, translate the queries into methods
+    // TODO: find the datasource
+    // TODO: foreach query, translate the queries into calls to the adapter
     var modelCode = ''
 
     modelCode += _.map(model.queries,function(query) {
@@ -64,5 +64,9 @@ exports.createModel = function(rootDir, modelName, cb) {
  * @param cb
  */
 exports.createQuery = function(query) {
+  // TODO: connect()
+  // TODO: beforeQuery()
+  // TODO: query()
+  // TODO: afterQuery()
   return "// query goes here\n";
 }

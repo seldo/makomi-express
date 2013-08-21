@@ -153,6 +153,8 @@ exports.createAppJS = function(definition) {
     "    store: sessionStore\n" +
     "  }));\n\n"
 
+  // TODO: load data sources and run connect on all of them here
+
   out += "  // router\n" +
     "  app.use(app.router);\n" +
     "  require('./router.js')(app);\n\n"
