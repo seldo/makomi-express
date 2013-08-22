@@ -104,7 +104,8 @@ exports.createAppJS = function(definition) {
     'io':'socket.io',
     'sio':'socket.io-sessions',
     'MemoryStore':'connect/lib/middleware/session/memory',
-    'mkEx':'makomi-express-runtime'
+    'mkEx':'makomi-express-runtime',
+    'mkSrc': 'makomi-source-util'
   }
   out += 'var '
   out += _.map(requiredPackages,function(value,key,list) {
@@ -141,7 +142,9 @@ exports.createAppJS = function(definition) {
   out += "var appConfigFile = process.env.MAKOMICONF || '/etc/makomi/makomi.conf'\n" +
     "appConfig = {} // this is available globally once loaded\n\n" +
     "// everything in here waits until config is available\n" +
-    "mkEx.util.loadConfig(appConfigFile,function(config) {\n"
+    "mkSrc.config.setConfigFileLocation(appConfigFile);\n" +
+    "mkSrc.config.setEnv(process.env.MAKOMIENV);\n" +
+    "mkSrc.config.loadConfig(function(config) {\n"
 
   out += "  appConfig = config;\n\n"
 
