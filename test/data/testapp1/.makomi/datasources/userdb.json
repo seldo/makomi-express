@@ -1,5 +1,5 @@
 {
-  "source": "makomi-datasource-mysql",
+  "adapter": "makomi-adapter-mysql",
   "params": {
     "host": {
       "type": "configdata",
