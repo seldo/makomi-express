@@ -19,7 +19,6 @@ exports.initialize = function(sourceDir,outputDir,devMode,cb){
 
   // TODO: check outputDir and sourceDir exist and make sense
   // TODO: maybe checksum files to avoid overwriting manual edits?
-
   // TODO: if we override the app structure we do it here
   mkSrc.loadDefinition(sourceDir,function(definition) {
 
